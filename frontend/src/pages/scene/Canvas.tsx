@@ -1,7 +1,7 @@
 import { Grid, OrbitControls, PivotControls } from "@react-three/drei";
 import { Canvas, type MeshProps, type ThreeEvent } from "@react-three/fiber";
-import { useState, type Dispatch, type SetStateAction } from "react";
-import { DoubleSide } from "three";
+import { useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { Matrix4, Vector3, Euler, Quaternion, DoubleSide } from "three";
 import type { SceneObject } from "../../types/scene";
 
 interface ObjectMeshProps {
@@ -98,6 +98,7 @@ interface RenderObjectProps {
   activeObjectId: string | null;
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
   setIsTransforming: Dispatch<SetStateAction<boolean>>;
+  setSceneObjects: Dispatch<SetStateAction<SceneObject[]>>;
 }
 
 function RenderObject({
@@ -105,7 +106,47 @@ function RenderObject({
   activeObjectId,
   setActiveObjectId,
   setIsTransforming,
+  setSceneObjects,
 }: RenderObjectProps) {
+  // Stores the latest drag delta reported by PivotControls during the current interaction.
+  const dragMatrixRef = useRef(new Matrix4());
+  // Remounts PivotControls after a committed transform so its internal delta resets cleanly.
+  const pivotKey = `${object.id}-${object.position.join(",")}-${object.rotation.join(",")}-${object.scale.join(",")}`;
+
+  // Combines the object's saved transform with the latest drag delta and writes the result to React state.
+  const commitTransform = () => {
+    const basePosition = new Vector3(...object.position);
+    const baseRotation = new Euler(...object.rotation);
+    const baseQuaternion = new Quaternion().setFromEuler(baseRotation);
+    const baseScale = new Vector3(...object.scale);
+    const baseMatrix = new Matrix4().compose(
+      basePosition,
+      baseQuaternion,
+      baseScale,
+    );
+    const position = new Vector3();
+    const quaternion = new Quaternion();
+    const scale = new Vector3();
+
+    baseMatrix.multiply(dragMatrixRef.current);
+    baseMatrix.decompose(position, quaternion, scale);
+
+    const rotation = new Euler().setFromQuaternion(quaternion);
+
+    setSceneObjects((objects) =>
+      objects.map((entry) =>
+        entry.id === object.id
+          ? {
+              ...entry,
+              position: [position.x, position.y, position.z],
+              rotation: [rotation.x, rotation.y, rotation.z],
+              scale: [scale.x, scale.y, scale.z],
+            }
+          : entry
+      ),
+    );
+  };
+
   if (object.id === activeObjectId) {
     return (
       <group
@@ -114,15 +155,25 @@ function RenderObject({
         scale={object.scale}
       >
         <PivotControls
+          key={pivotKey}
           depthTest={false}
           anchor={[0, 0, 0]}
-          onDragStart={() => setIsTransforming(true)}
-          onDragEnd={() => setIsTransforming(false)}
+          onDragStart={() => {
+            // Start each drag from a clean identity matrix and pause camera orbit while transforming.
+            dragMatrixRef.current.identity();
+            setIsTransforming(true);
+          }}
+          onDrag={(localMatrix) => {
+            // Keep the most recent drag delta so it can be committed once on drag end.
+            dragMatrixRef.current.copy(localMatrix);
+          }}
+          onDragEnd={() => {
+            // Persist the final transform to scene state, then re-enable orbit controls.
+            commitTransform();
+            setIsTransforming(false);
+          }}
         >
-          <ObjectMesh
-            object={object}
-            setActiveObjectId={setActiveObjectId}
-          />
+          <ObjectMesh object={object} setActiveObjectId={setActiveObjectId} />
         </PivotControls>
       </group>
     );
@@ -134,10 +185,7 @@ function RenderObject({
       rotation={object.rotation}
       scale={object.scale}
     >
-      <ObjectMesh
-        object={object}
-        setActiveObjectId={setActiveObjectId}
-      />
+      <ObjectMesh object={object} setActiveObjectId={setActiveObjectId} />
     </group>
   );
 }
@@ -147,6 +195,7 @@ interface SceneCanvasProps {
   sceneObjects: SceneObject[];
   activeObjectId: string | null;
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
+  setSceneObjects: Dispatch<SetStateAction<SceneObject[]>>;
 }
 
 export function SceneCanvas({
@@ -154,6 +203,7 @@ export function SceneCanvas({
   sceneObjects,
   activeObjectId,
   setActiveObjectId,
+  setSceneObjects,
 }: SceneCanvasProps) {
   const [isTransforming, setIsTransforming] = useState(false);
 
@@ -192,6 +242,7 @@ export function SceneCanvas({
           activeObjectId={activeObjectId}
           setActiveObjectId={setActiveObjectId}
           setIsTransforming={setIsTransforming}
+          setSceneObjects={setSceneObjects}
         />
       ))}
       <OrbitControls makeDefault enabled={!isTransforming} />

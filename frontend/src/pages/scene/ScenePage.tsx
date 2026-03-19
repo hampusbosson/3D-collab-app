@@ -16,18 +16,19 @@ function ScenePage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const starterCube: SceneObject = {
-      id: "cube-01",
-      type: "Cube",
-      name: "Starter Cube",
-      position: [0, 0.7, 0],
-      rotation: [0, 0, 0],
-      scale: [1, 1, 1],
-      color: "#fb923c",
-      opacity: 1,
+    id: "cube-01",
+    type: "Cube",
+    name: "Starter Cube",
+    position: [0, 0.7, 0],
+    rotation: [0, 0, 0],
+    scale: [1, 1, 1],
+    color: "#fb923c",
+    opacity: 1,
   };
 
-  const [sceneObjects, setSceneObjects] =
-    useState<SceneObject[]>([starterCube]);
+  const [sceneObjects, setSceneObjects] = useState<SceneObject[]>([
+    starterCube,
+  ]);
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
   const activeObject =
     sceneObjects.find((object) => object.id === activeObjectId) ?? null;
@@ -36,7 +37,13 @@ function ScenePage() {
     <div className="min-h-screen bg-(--bg-app) text-(--text-primary)">
       <div className="relative min-h-screen">
         <div className="absolute inset-0">
-          <SceneCanvas isDark={isDark} sceneObjects={sceneObjects} activeObjectId={activeObjectId} setActiveObjectId={setActiveObjectId}/>
+          <SceneCanvas
+            isDark={isDark}
+            sceneObjects={sceneObjects}
+            activeObjectId={activeObjectId}
+            setActiveObjectId={setActiveObjectId}
+            setSceneObjects={setSceneObjects}
+          />
         </div>
 
         <aside
@@ -62,7 +69,10 @@ function ScenePage() {
         </aside>
 
         <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
-          <AddObjectBar setSceneObjects={setSceneObjects} setActiveObjectId={setActiveObjectId}/>
+          <AddObjectBar
+            setSceneObjects={setSceneObjects}
+            setActiveObjectId={setActiveObjectId}
+          />
         </div>
       </div>
     </div>
