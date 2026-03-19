@@ -1,4 +1,4 @@
-export type PrimitiveType = 'Cube' | 'Sphere' | 'Cylinder';
+export type PrimitiveType = 'Cube' | 'Sphere' | 'Cylinder' | 'Cone' | 'Pyramid' | 'Plane';
 
 export type Vector3Tuple = [number, number, number];
 

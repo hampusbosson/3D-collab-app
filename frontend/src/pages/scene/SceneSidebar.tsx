@@ -5,11 +5,14 @@ import type { SceneSummary } from '../../types/scenes';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
+  ConeIcon,
   CubeIcon,
   CylinderIcon,
   EyeIcon,
   LockIcon,
   MarkIcon,
+  PlaneIcon,
+  PyramidIcon,
   SphereIcon,
 } from '../../components/icons/SceneIcons';
 import React from 'react';
@@ -30,6 +33,18 @@ function ObjectIcon({ type }: { type: SceneObject['type'] }) {
 
   if (type === 'Cylinder') {
     return <CylinderIcon />;
+  }
+
+  if (type === 'Cone') {
+    return <ConeIcon />;
+  }
+
+  if (type === 'Pyramid') {
+    return <PyramidIcon />;
+  }
+
+  if (type === 'Plane') {
+    return <PlaneIcon />;
   }
 
   return <CubeIcon />;

@@ -15,16 +15,7 @@ function ScenePage() {
   const isDark = theme === "dark";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // const starterCube: SceneObject = {
-  //   id: "cube-01",
-  //   type: "Cube",
-  //   name: "Starter Cube",
-  //   position: [0, 0.7, 0],
-  //   color: "#fb923c",
-  // };
-
-  const starterObjects: SceneObject[] = [
-    {
+  const starterCube: SceneObject = {
       id: "cube-01",
       type: "Cube",
       name: "Starter Cube",
@@ -33,31 +24,10 @@ function ScenePage() {
       scale: [1, 1, 1],
       color: "#fb923c",
       opacity: 1,
-    },
-    {
-      id: "cylinder-01",
-      type: "Cylinder",
-      name: "Starter Cylinder",
-      position: [2, 0.7, 0],
-      rotation: [0, 0, 0],
-      scale: [1, 1, 1],
-      color: "#fb923c",
-      opacity: 1,
-    },
-    {
-      id: "sphere-01",
-      type: "Sphere",
-      name: "Starter Sphere",
-      position: [-2, 0.7, 0],
-      rotation: [0, 0, 0],
-      scale: [1, 1, 1],
-      color: "#fb923c",
-      opacity: 1,
-    },
-  ];
+  };
 
   const [sceneObjects, setSceneObjects] =
-    useState<SceneObject[]>(starterObjects);
+    useState<SceneObject[]>([starterCube]);
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
   const activeObject =
     sceneObjects.find((object) => object.id === activeObjectId) ?? null;
@@ -92,7 +62,7 @@ function ScenePage() {
         </aside>
 
         <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
-          <AddObjectBar />
+          <AddObjectBar setSceneObjects={setSceneObjects} setActiveObjectId={setActiveObjectId}/>
         </div>
       </div>
     </div>

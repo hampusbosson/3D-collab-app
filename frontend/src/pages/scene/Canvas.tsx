@@ -1,6 +1,7 @@
 import { Grid, OrbitControls, PivotControls } from "@react-three/drei";
 import { Canvas, type MeshProps, type ThreeEvent } from "@react-three/fiber";
 import { useState, type Dispatch, type SetStateAction } from "react";
+import { DoubleSide } from "three";
 import type { SceneObject } from "../../types/scene";
 
 interface ObjectMeshProps {
@@ -38,6 +39,40 @@ function ObjectMesh({ object, setActiveObjectId }: ObjectMeshProps) {
           <cylinderGeometry args={[0.65, 0.65, 1.5, 24]} />
           <meshStandardMaterial
             color={object.color}
+            transparent={object.opacity < 1}
+            opacity={object.opacity}
+          />
+        </mesh>
+      );
+    case "Cone":
+      return (
+        <mesh {...meshProps}>
+          <coneGeometry args={[0.75, 1.4, 24]} />
+          <meshStandardMaterial
+            color={object.color}
+            transparent={object.opacity < 1}
+            opacity={object.opacity}
+          />
+        </mesh>
+      );
+    case "Pyramid":
+      return (
+        <mesh {...meshProps}>
+          <coneGeometry args={[0.85, 1.5, 4]} />
+          <meshStandardMaterial
+            color={object.color}
+            transparent={object.opacity < 1}
+            opacity={object.opacity}
+          />
+        </mesh>
+      );
+    case "Plane":
+      return (
+        <mesh {...meshProps} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[1.6, 1.6]} />
+          <meshStandardMaterial
+            color={object.color}
+            side={DoubleSide}
             transparent={object.opacity < 1}
             opacity={object.opacity}
           />
