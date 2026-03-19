@@ -1,10 +1,44 @@
 @import "tailwindcss";
 
 :root {
-  color: #f5f5f4;
-  background-color: #0c0a09;
+  color-scheme: dark;
+  --bg-app:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 24%),
+    radial-gradient(circle at top right, rgba(34, 211, 238, 0.12), transparent 22%),
+    linear-gradient(180deg, #0b1220 0%, #0f172a 52%, #111827 100%);
+  --bg-canvas: #dbe4ef;
+  --surface-sidebar: rgba(15, 23, 42, 0.72);
+  --surface-panel: rgba(15, 23, 42, 0.56);
+  --surface-elevated: rgba(30, 41, 59, 0.92);
+  --surface-muted: rgba(15, 23, 42, 0.42);
+  --surface-strong: #020617;
+  --surface-soft: rgba(51, 65, 85, 0.32);
+  --border-subtle: rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(226, 232, 240, 0.2);
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-inverse: #020617;
+  --accent-primary: #f8fafc;
+  --accent-contrast: #020617;
+  --accent-danger-bg: rgba(127, 29, 29, 0.34);
+  --accent-danger-border: rgba(248, 113, 113, 0.24);
+  --accent-danger-text: #fecaca;
+  --badge-blue-start: #93c5fd;
+  --badge-blue-mid: #67e8f9;
+  --badge-blue-end: #e0f2fe;
+  --badge-stone-start: #d6d3d1;
+  --badge-stone-mid: #e7e5e4;
+  --badge-stone-end: #f8fafc;
+  --badge-green-start: #86efac;
+  --badge-green-mid: #5eead4;
+  --badge-green-end: #ecfdf5;
+  --shadow-soft: 0 18px 40px rgba(2, 6, 23, 0.22);
+  --shadow-panel: 0 30px 80px rgba(2, 6, 23, 0.24);
+  --shadow-card: 0 24px 60px rgba(2, 6, 23, 0.2);
   font-family:
-    Inter,
+    "SF Pro Display",
+    "SF Pro Text",
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -17,6 +51,43 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg-app:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.85), transparent 28%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  --bg-canvas: #eef2f7;
+  --surface-sidebar: rgba(255, 255, 255, 0.7);
+  --surface-panel: rgba(255, 255, 255, 0.55);
+  --surface-elevated: rgba(255, 255, 255, 0.85);
+  --surface-muted: rgba(248, 250, 252, 0.8);
+  --surface-strong: #0f172a;
+  --surface-soft: rgba(148, 163, 184, 0.12);
+  --border-subtle: rgba(148, 163, 184, 0.22);
+  --border-strong: rgba(15, 23, 42, 0.12);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #f8fafc;
+  --accent-primary: #0f172a;
+  --accent-contrast: #f8fafc;
+  --accent-danger-bg: #fef2f2;
+  --accent-danger-border: #fecaca;
+  --accent-danger-text: #dc2626;
+  --badge-blue-start: #dbeafe;
+  --badge-blue-mid: #7dd3fc;
+  --badge-blue-end: #ffffff;
+  --badge-stone-start: #e7e5e4;
+  --badge-stone-mid: #cbd5e1;
+  --badge-stone-end: #ffffff;
+  --badge-green-start: #d1fae5;
+  --badge-green-mid: #5eead4;
+  --badge-green-end: #ffffff;
+  --shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.06);
+  --shadow-panel: 0 30px 80px rgba(15, 23, 42, 0.06);
+  --shadow-card: 0 24px 60px rgba(15, 23, 42, 0.08);
 }
 
 * {
@@ -32,8 +103,20 @@ body,
 
 body {
   min-width: 320px;
+  background: var(--bg-app);
+  color: var(--text-primary);
 }
 
 button {
   font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+input,
+button {
+  outline: none;
 }
