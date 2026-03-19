@@ -1,67 +1,133 @@
 import { Grid, OrbitControls, PivotControls } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
-import type { SceneObject } from "./types";
+import { Canvas, type MeshProps, type ThreeEvent } from "@react-three/fiber";
+import { useState, type Dispatch, type SetStateAction } from "react";
+import type { SceneObject } from "../../types/scene";
 
-interface RenderObjectProps {
+interface ObjectMeshProps {
   object: SceneObject;
-  activeObjectId: string | null;
+  setActiveObjectId: Dispatch<SetStateAction<string | null>>;
 }
 
-function ObjectMesh({ object }: { object: SceneObject }) {
+function ObjectMesh({ object, setActiveObjectId }: ObjectMeshProps) {
+  const handleObjectClick = (event: ThreeEvent<MouseEvent>) => {
+    event.stopPropagation();
+    setActiveObjectId(object.id);
+  };
+
+  const meshProps: MeshProps = {
+    castShadow: true,
+    receiveShadow: true,
+    onClick: handleObjectClick,
+  };
+
   switch (object.type) {
     case "Sphere":
       return (
-        <mesh position={object.position} castShadow receiveShadow>
+        <mesh {...meshProps}>
           <sphereGeometry args={[0.75, 32, 32]} />
-          <meshStandardMaterial color={object.color} />
+          <meshStandardMaterial
+            color={object.color}
+            transparent={object.opacity < 1}
+            opacity={object.opacity}
+          />
         </mesh>
       );
     case "Cylinder":
       return (
-        <mesh position={object.position} castShadow receiveShadow>
+        <mesh {...meshProps}>
           <cylinderGeometry args={[0.65, 0.65, 1.5, 24]} />
-          <meshStandardMaterial color={object.color} />
+          <meshStandardMaterial
+            color={object.color}
+            transparent={object.opacity < 1}
+            opacity={object.opacity}
+          />
         </mesh>
       );
     case "Cube":
     default:
       return (
-        <mesh position={object.position} castShadow receiveShadow>
+        <mesh {...meshProps}>
           <boxGeometry args={[1.25, 1.25, 1.25]} />
-          <meshStandardMaterial color={object.color} />
+          <meshStandardMaterial
+            color={object.color}
+            transparent={object.opacity < 1}
+            opacity={object.opacity}
+          />
         </mesh>
       );
   }
 }
 
-function RenderObject({ object, activeObjectId }: RenderObjectProps) {
+interface RenderObjectProps {
+  object: SceneObject;
+  activeObjectId: string | null;
+  setActiveObjectId: Dispatch<SetStateAction<string | null>>;
+  setIsTransforming: Dispatch<SetStateAction<boolean>>;
+}
+
+function RenderObject({
+  object,
+  activeObjectId,
+  setActiveObjectId,
+  setIsTransforming,
+}: RenderObjectProps) {
   if (object.id === activeObjectId) {
     return (
-      <PivotControls depthTest={false} anchor={[0,0,0]}>
-        <ObjectMesh object={object} />
-      </PivotControls>
+      <group
+        position={object.position}
+        rotation={object.rotation}
+        scale={object.scale}
+      >
+        <PivotControls
+          depthTest={false}
+          anchor={[0, 0, 0]}
+          onDragStart={() => setIsTransforming(true)}
+          onDragEnd={() => setIsTransforming(false)}
+        >
+          <ObjectMesh
+            object={object}
+            setActiveObjectId={setActiveObjectId}
+          />
+        </PivotControls>
+      </group>
     );
   }
 
-  return <ObjectMesh object={object} />;
+  return (
+    <group
+      position={object.position}
+      rotation={object.rotation}
+      scale={object.scale}
+    >
+      <ObjectMesh
+        object={object}
+        setActiveObjectId={setActiveObjectId}
+      />
+    </group>
+  );
 }
 
 interface SceneCanvasProps {
   isDark: boolean;
   sceneObjects: SceneObject[];
   activeObjectId: string | null;
+  setActiveObjectId: Dispatch<SetStateAction<string | null>>;
 }
 
 export function SceneCanvas({
   isDark,
   sceneObjects,
   activeObjectId,
+  setActiveObjectId,
 }: SceneCanvasProps) {
+  const [isTransforming, setIsTransforming] = useState(false);
+
   return (
     <Canvas
       shadows
       camera={{ position: [6, 5, 8], fov: 45 }}
       className="h-full w-full"
+      onPointerMissed={() => setActiveObjectId(null)}
     >
       <color attach="background" args={[isDark ? "#0f172a" : "#dbe4ef"]} />
       <ambientLight intensity={isDark ? 1.2 : 1.5} />
@@ -89,9 +155,11 @@ export function SceneCanvas({
           key={object.id}
           object={object}
           activeObjectId={activeObjectId}
+          setActiveObjectId={setActiveObjectId}
+          setIsTransforming={setIsTransforming}
         />
       ))}
-      <OrbitControls makeDefault />
+      <OrbitControls makeDefault enabled={!isTransforming} />
     </Canvas>
   );
 }

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTheme } from "../../components/theme/ThemeProvider";
+import type { SceneObject } from "../../types/scene";
 import { scenes } from "../../utils/scenes";
+import AddObjectBar from "./AddObjectBar";
 import { SceneCanvas } from "./Canvas";
+import SceneInspector from "./SceneInspector";
 import SceneSidebar from "./SceneSidebar";
-import type { SceneObject } from "./types";
 
 function ScenePage() {
   const { sceneId } = useParams();
@@ -27,38 +29,49 @@ function ScenePage() {
       type: "Cube",
       name: "Starter Cube",
       position: [0, 0.7, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
       color: "#fb923c",
+      opacity: 1,
     },
     {
       id: "cylinder-01",
       type: "Cylinder",
       name: "Starter Cylinder",
       position: [2, 0.7, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
       color: "#fb923c",
+      opacity: 1,
     },
     {
       id: "sphere-01",
       type: "Sphere",
       name: "Starter Sphere",
       position: [-2, 0.7, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
       color: "#fb923c",
+      opacity: 1,
     },
   ];
 
   const [sceneObjects, setSceneObjects] =
     useState<SceneObject[]>(starterObjects);
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
+  const activeObject =
+    sceneObjects.find((object) => object.id === activeObjectId) ?? null;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-app)] text-[color:var(--text-primary)]">
+    <div className="min-h-screen bg-(--bg-app) text-(--text-primary)">
       <div className="relative min-h-screen">
         <div className="absolute inset-0">
-          <SceneCanvas isDark={isDark} sceneObjects={sceneObjects} activeObjectId={activeObjectId}/>
+          <SceneCanvas isDark={isDark} sceneObjects={sceneObjects} activeObjectId={activeObjectId} setActiveObjectId={setActiveObjectId}/>
         </div>
 
         <aside
           className={`absolute left-4 right-4 top-4 z-10 lg:bottom-4 lg:left-4 lg:right-auto lg:top-4 ${
-            sidebarCollapsed ? "lg:w-[44px]" : "lg:w-[216px]"
+            sidebarCollapsed ? "lg:w-11" : "lg:w-54"
           }`}
         >
           <SceneSidebar
@@ -71,9 +84,16 @@ function ScenePage() {
           />
         </aside>
 
-        <aside className="absolute bottom-4 left-4 right-4 z-10 border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] p-6 backdrop-blur-xl lg:bottom-4 lg:left-auto lg:right-4 lg:top-4 lg:w-[220px] lg:overflow-y-auto">
-          <div className="space-y-6"></div>
+        <aside className="absolute bottom-4 left-4 right-4 z-10 lg:bottom-4 lg:left-auto lg:right-4 lg:top-4 lg:w-[264px]">
+          <SceneInspector
+            activeObject={activeObject}
+            setSceneObjects={setSceneObjects}
+          />
         </aside>
+
+        <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
+          <AddObjectBar />
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import type { SceneObject } from '../../types/scene';
 import type { SceneSummary } from '../../types/scenes';
 import {
   ChevronLeftIcon,
@@ -11,7 +12,6 @@ import {
   MarkIcon,
   SphereIcon,
 } from '../../components/icons/SceneIcons';
-import type { SceneObject } from './types';
 import React from 'react';
 
 interface SceneSidebarProps {
