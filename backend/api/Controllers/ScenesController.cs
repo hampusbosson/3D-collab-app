@@ -31,35 +31,37 @@ public class ScenesController : ControllerBase
         _db.Scenes.Add(scene);
         await _db.SaveChangesAsync();
 
-        var response = new SceneDto
-        {
-            Id = scene.Id,
-            Name = scene.Name,
-            CreatedAt = scene.CreatedAt,
-            UpdatedAt = scene.UpdatedAt
-        };
+        var response = SceneToDTO(scene);
 
         return CreatedAtAction(nameof(GetSceneById), new { id = scene.Id }, response);
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<SceneDto>>> GetScenes()
+    {
+        return await _db.Scenes.AsNoTracking().OrderByDescending(s => s.UpdatedAt).Select(x => SceneToDTO(x)).ToListAsync();
     }
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<SceneDto>> GetSceneById(Guid id)
     {
-        var scene = await _db.Scenes.FirstOrDefaultAsync(s => s.Id == id);
+        var scene = await _db.Scenes.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
 
         if (scene == null)
         {
             return NotFound();
         }
 
-        var response = new SceneDto
-        {
-            Id = scene.Id,
-            Name = scene.Name,
-            CreatedAt = scene.CreatedAt,
-            UpdatedAt = scene.UpdatedAt
-        };
+        var response = SceneToDTO(scene);
 
         return Ok(response);
     }
+
+    private static SceneDto SceneToDTO(Scene scene) => new SceneDto
+    {
+        Id = scene.Id,
+        Name = scene.Name,
+        CreatedAt = scene.CreatedAt,
+        UpdatedAt = scene.UpdatedAt
+    };
 }
