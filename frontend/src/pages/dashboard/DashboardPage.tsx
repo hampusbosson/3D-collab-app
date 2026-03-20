@@ -6,17 +6,45 @@ import {
   SearchIcon,
 } from '../../components/icons/DashboardIcons';
 import ThemeToggle from '../../components/theme/ThemeToggle';
-import { scenes } from '../../utils/scenes';
-import PreviewThumbnail from './PreviewThumbnail';
+//import { scenes } from '../../utils/scenes';
+//import PreviewThumbnail from './PreviewThumbnail';
+import { createScene, getScenes } from '../../api/scenes';
+import { SceneDto } from '../../types/scenes';
+import { useEffect, useState } from 'react';
 
 function DashboardPage() {
-  const accentClassNames = {
-    blue: 'from-[var(--badge-blue-start)] via-[var(--badge-blue-mid)] to-[var(--badge-blue-end)]',
-    stone:
-      'from-[var(--badge-stone-start)] via-[var(--badge-stone-mid)] to-[var(--badge-stone-end)]',
-    green:
-      'from-[var(--badge-green-start)] via-[var(--badge-green-mid)] to-[var(--badge-green-end)]',
-  } as const;
+  const [scenes, setScenes] = useState<SceneDto[]>([]);
+  
+  useEffect(() => {
+    loadScenes();
+  },[]);
+
+  const loadScenes = async() => {
+    try {
+      const scenesData = await getScenes();
+      setScenes(scenesData);
+    } catch (error) {
+      console.error("Failed to load scenes", error);
+    }
+  }
+
+  const handleCreateScene = async(name: string) => {
+    try {
+      const newScene = await createScene({name});
+      setScenes((prev) => [newScene, ...prev]);
+      console.log('scene created: ', newScene.name);
+    } catch (error) {
+      console.error("Failed to create scene", error);
+    }
+  }
+
+  // const accentClassNames = {
+  //   blue: 'from-[var(--badge-blue-start)] via-[var(--badge-blue-mid)] to-[var(--badge-blue-end)]',
+  //   stone:
+  //     'from-[var(--badge-stone-start)] via-[var(--badge-stone-mid)] to-[var(--badge-stone-end)]',
+  //   green:
+  //     'from-[var(--badge-green-start)] via-[var(--badge-green-mid)] to-[var(--badge-green-end)]',
+  // } as const;
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] text-[color:var(--text-primary)]">
@@ -60,6 +88,7 @@ function DashboardPage() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
+                  onClick={() => handleCreateScene("untitled")}
                   className="inline-flex hover:cursor-pointer items-center gap-2 rounded-2xl bg-[var(--accent-primary)] px-4 py-3 text-sm font-medium text-[color:var(--accent-contrast)] shadow-[var(--shadow-soft)] transition hover:opacity-90"
                 >
                   <PlusIcon />
@@ -99,23 +128,23 @@ function DashboardPage() {
                     to={`/scene/${scene.id}`}
                     className="group block rounded-[32px] border border-[color:var(--border-subtle)] bg-[var(--surface-elevated)] p-4 shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-1 hover:border-[color:var(--border-strong)]"
                   >
-                    <PreviewThumbnail
+                    {/* <PreviewThumbnail
                       primary={scene.preview.primary}
                       secondary={scene.preview.secondary}
                       glow={scene.preview.glow}
-                    />
+                    /> */}
 
                     <div className="mt-5 flex items-start justify-between gap-4">
                       <div>
-                        <div
+                        {/* <div
                           className={`inline-flex rounded-full bg-gradient-to-r ${accentClassNames[scene.accent]} px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-[color:var(--text-inverse)]`}
                         >
                           Scene
-                        </div>
+                        </div> */}
                         <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[color:var(--text-primary)]">
                           {scene.name}
                         </h3>
-                        <p className="mt-2 text-sm text-[color:var(--text-secondary)]">{scene.updatedAtLabel}</p>
+                        <p className="mt-2 text-sm text-[color:var(--text-secondary)]">{scene.updatedAt}</p>
                       </div>
                       <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-muted)] text-[color:var(--text-secondary)] transition group-hover:border-[color:var(--border-strong)] group-hover:bg-[var(--surface-strong)] group-hover:text-[color:var(--text-inverse)]">
                         <ArrowIcon />
