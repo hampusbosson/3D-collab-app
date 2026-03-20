@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { SceneObject } from '../../types/scene';
-import type { SceneSummary } from '../../types/scenes';
+import type { SceneDto } from '../../types/scenes';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -18,7 +18,7 @@ import {
 import React from 'react';
 
 interface SceneSidebarProps {
-  scene: SceneSummary;
+  scene: SceneDto | null;
   elements: SceneObject[];
   collapsed: boolean;
   onToggleCollapse: () => void;
@@ -109,7 +109,7 @@ function SceneSidebar({
           </Link>
           <div className="min-w-0 flex-1 rounded-md border border-[color:var(--border-subtle)] bg-[var(--surface-elevated)] px-2.5 py-1 shadow-[var(--shadow-soft)]">
             <p className="truncate text-[0.86rem] font-semibold tracking-[-0.03em] text-[color:var(--text-primary)]">
-              {scene.name}
+              {scene?.name}
             </p>
           </div>
           <HeaderButton label="Collapse sidebar" onClick={onToggleCollapse}>

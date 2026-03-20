@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTheme } from "../../components/theme/ThemeProvider";
 import type { SceneObject } from "../../types/scene";
@@ -7,14 +7,32 @@ import AddObjectBar from "./AddObjectBar";
 import { SceneCanvas } from "./Canvas";
 import SceneInspector from "./SceneInspector";
 import SceneSidebar from "./SceneSidebar";
+import { getSceneById } from "../../api/scenes";
+import { SceneDto } from "../../types/scenes";
 
 function ScenePage() {
   const { sceneId } = useParams();
   const { theme } = useTheme();
-  const scene = scenes.find((entry) => entry.id === sceneId) ?? scenes[0];
+  const [scene, setScene] = useState<SceneDto | null>(null)
   const isDark = theme === "dark";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  const fetchScene = async() => {
+    if (!sceneId) return;
+    try {
+      const scene = await getSceneById(sceneId);
+      setScene(scene); 
+    } catch (error) {
+      console.error("Failed to fetch scene", error);
+    }
+  }
+
+  // Fetch the scene from database
+  useEffect(() => {
+    fetchScene()
+  }, [sceneId]);
+
+  
   const starterCube: SceneObject = {
     id: "cube-01",
     type: "Cube",
