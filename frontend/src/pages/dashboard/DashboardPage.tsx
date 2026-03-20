@@ -1,50 +1,75 @@
-import { Link } from 'react-router-dom';
 import {
   AppLogo,
-  ArrowIcon,
   PlusIcon,
   SearchIcon,
-} from '../../components/icons/DashboardIcons';
-import ThemeToggle from '../../components/theme/ThemeToggle';
-//import { scenes } from '../../utils/scenes';
-//import PreviewThumbnail from './PreviewThumbnail';
-import { createScene, getScenes } from '../../api/scenes';
-import { SceneDto } from '../../types/scenes';
-import { useEffect, useState } from 'react';
+} from "../../components/icons/DashboardIcons";
+import ThemeToggle from "../../components/theme/ThemeToggle";
+import { createScene, deleteScene, getScenes } from "../../api/scenes";
+import { SceneDto } from "../../types/scenes";
+import { useEffect, useState } from "react";
+import DeleteSceneModal from "./DeleteSceneModal";
+import SceneCard from "./SceneCard";
 
 function DashboardPage() {
   const [scenes, setScenes] = useState<SceneDto[]>([]);
-  
+  const [scenePendingDelete, setScenePendingDelete] = useState<SceneDto | null>(
+    null,
+  );
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeletingScene, setIsDeletingScene] = useState(false);
+
   useEffect(() => {
     loadScenes();
-  },[]);
+  }, []);
 
-  const loadScenes = async() => {
+  const loadScenes = async () => {
     try {
       const scenesData = await getScenes();
       setScenes(scenesData);
     } catch (error) {
       console.error("Failed to load scenes", error);
     }
-  }
+  };
 
-  const handleCreateScene = async(name: string) => {
+  const handleCreateScene = async (name: string) => {
     try {
-      const newScene = await createScene({name});
+      const newScene = await createScene({ name });
       setScenes((prev) => [newScene, ...prev]);
-      console.log('scene created: ', newScene.name);
+      console.log("scene created: ", newScene.name);
     } catch (error) {
       console.error("Failed to create scene", error);
     }
-  }
+  };
 
-  // const accentClassNames = {
-  //   blue: 'from-[var(--badge-blue-start)] via-[var(--badge-blue-mid)] to-[var(--badge-blue-end)]',
-  //   stone:
-  //     'from-[var(--badge-stone-start)] via-[var(--badge-stone-mid)] to-[var(--badge-stone-end)]',
-  //   green:
-  //     'from-[var(--badge-green-start)] via-[var(--badge-green-mid)] to-[var(--badge-green-end)]',
-  // } as const;
+  const handleOpenDeleteModal = (scene: SceneDto) => {
+    setDeleteError(null);
+    setScenePendingDelete(scene);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setDeleteError(null);
+    setScenePendingDelete(null);
+  };
+
+  const handleConfirmDelete = async (sceneId: string) => {
+    setDeleteError(null);
+    setIsDeletingScene(true);
+
+    try {
+      await deleteScene(sceneId);
+
+      setScenes((previousScenes) =>
+        previousScenes.filter((scene) => scene.id !== sceneId),
+      );
+
+      setScenePendingDelete(null);
+    } catch (error) {
+      console.error("Failed to delete scene", error);
+      setDeleteError("Could not delete this scene. Please try again.");
+    } finally {
+      setIsDeletingScene(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] text-[color:var(--text-primary)]">
@@ -111,7 +136,8 @@ function DashboardPage() {
                     Scene dashboard
                   </h2>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-[color:var(--text-secondary)]">
-                    Open a scene, continue from where you left off, or start a new canvas for collaborative editing.
+                    Open a scene, continue from where you left off, or start a
+                    new canvas for collaborative editing.
                   </p>
                 </div>
                 <div className="flex gap-3">
@@ -123,56 +149,26 @@ function DashboardPage() {
 
               <div className="mt-8 grid gap-6 xl:grid-cols-2 2xl:grid-cols-3">
                 {scenes.map((scene) => (
-                  <Link
+                  <SceneCard
                     key={scene.id}
-                    to={`/scene/${scene.id}`}
-                    className="group block rounded-[32px] border border-[color:var(--border-subtle)] bg-[var(--surface-elevated)] p-4 shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-1 hover:border-[color:var(--border-strong)]"
-                  >
-                    {/* <PreviewThumbnail
-                      primary={scene.preview.primary}
-                      secondary={scene.preview.secondary}
-                      glow={scene.preview.glow}
-                    /> */}
-
-                    <div className="mt-5 flex items-start justify-between gap-4">
-                      <div>
-                        {/* <div
-                          className={`inline-flex rounded-full bg-gradient-to-r ${accentClassNames[scene.accent]} px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-[color:var(--text-inverse)]`}
-                        >
-                          Scene
-                        </div> */}
-                        <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[color:var(--text-primary)]">
-                          {scene.name}
-                        </h3>
-                        <p className="mt-2 text-sm text-[color:var(--text-secondary)]">{scene.updatedAt}</p>
-                      </div>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-muted)] text-[color:var(--text-secondary)] transition group-hover:border-[color:var(--border-strong)] group-hover:bg-[var(--surface-strong)] group-hover:text-[color:var(--text-inverse)]">
-                        <ArrowIcon />
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between border-t border-[color:var(--border-subtle)] pt-4">
-                      <div className="flex -space-x-2">
-                        {[0, 1, 2].map((index) => (
-                          <div
-                            key={index}
-                            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[var(--surface-elevated)] bg-[var(--surface-soft)] text-[11px] font-medium text-[color:var(--text-secondary)]"
-                          >
-                            {String.fromCharCode(65 + index)}
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-sm text-[color:var(--text-secondary)]">
-                        {scene.collaborators} collaborators
-                      </p>
-                    </div>
-                  </Link>
+                    scene={scene}
+                    onDeleteClick={handleOpenDeleteModal}
+                  />
                 ))}
               </div>
             </section>
           </div>
         </main>
       </div>
+
+      <DeleteSceneModal
+        scene={scenePendingDelete}
+        isOpen={scenePendingDelete !== null}
+        errorMessage={deleteError}
+        isDeleting={isDeletingScene}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

@@ -15,3 +15,7 @@ export async function createScene(data: CreateSceneDto): Promise<SceneDto> {
   const response = await apiClient.post<SceneDto>("/scenes", data);
   return response.data;
 }
+
+export async function deleteScene(id: string): Promise<void> {
+    await apiClient.delete(`/scenes/${id}`);
+}

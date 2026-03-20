@@ -63,3 +63,17 @@ export function ArrowIcon({ className = 'h-4 w-4' }: DashboardIconProps = {}) {
     </svg>
   );
 }
+
+export function DeleteIcon({ className = 'h-4 w-4' }: DashboardIconProps = {}) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M4 7H20M9.5 3H14.5M9 11V17M15 11V17M7 7L7.8 19C7.86 19.9 8.6 20.6 9.5 20.6H14.5C15.4 20.6 16.14 19.9 16.2 19L17 7"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
