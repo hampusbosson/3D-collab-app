@@ -1,12 +1,11 @@
-namespace api.Models;
+namespace api.Dtos;
 
-public class SceneObject
+public class SceneObjectDto
 {
     public Guid Id { get; set; }
-
     public Guid SceneId { get; set; }
 
-    public string Type { get; set; } = "";   // Cube, Sphere, Cylinder
+    public string Type { get; set; } = "";
     public string Name { get; set; } = "";
 
     public float PositionX { get; set; }
@@ -17,17 +16,11 @@ public class SceneObject
     public float RotationY { get; set; }
     public float RotationZ { get; set; }
 
-    public float ScaleX { get; set; } = 1f;
-    public float ScaleY { get; set; } = 1f;
-    public float ScaleZ { get; set; } = 1f;
-
-    public string Color { get; set; } = "#ffffff";
-
-    public float Opacity { get; set; } = 1f;
-
+    public float ScaleX { get; set; }
+    public float ScaleY { get; set; }
+    public float ScaleZ { get; set; }
+    public string Color { get; set; } = "";
+    public float Opacity { get; set; }
     public string CreatedBy { get; set; } = "";
-
     public DateTime UpdatedAt { get; set; }
-
-    public Scene? Scene { get; set; }
 }
