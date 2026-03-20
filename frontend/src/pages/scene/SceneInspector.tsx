@@ -1,9 +1,10 @@
 import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
-import type { SceneObject, VectorField } from '../../types/scene';
+import type { VectorField } from '../../types/scene';
+import type { SceneObjectDto } from '../../types/scenes';
 
 interface SceneInspectorProps {
-  activeObject: SceneObject | null;
-  setSceneObjects: Dispatch<SetStateAction<SceneObject[]>>;
+  activeObject: SceneObjectDto | null;
+  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
 }
 
 // Shared wrapper for inspector sections like Transform and Material.
@@ -84,24 +85,40 @@ function NumberField({
 
 // Updates one axis inside a vector property on the active scene object.
 function updateVector(
-  setSceneObjects: Dispatch<SetStateAction<SceneObject[]>>,
+  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>,
   activeObjectId: string,
   field: VectorField,
   axisIndex: number,
   nextValue: number,
 ) {
+  const numericValue = Number.isFinite(nextValue) ? nextValue : 0;
+
   setSceneObjects((objects) =>
     objects.map((object) => {
       if (object.id !== activeObjectId) {
         return object;
       }
 
-      const nextVector = [...object[field]] as [number, number, number];
-      nextVector[axisIndex] = Number.isFinite(nextValue) ? nextValue : 0;
+      if (field === 'position') {
+        const nextPositionFields = ['positionX', 'positionY', 'positionZ'] as const;
+        return {
+          ...object,
+          [nextPositionFields[axisIndex]]: numericValue,
+        };
+      }
 
+      if (field === 'rotation') {
+        const nextRotationFields = ['rotationX', 'rotationY', 'rotationZ'] as const;
+        return {
+          ...object,
+          [nextRotationFields[axisIndex]]: numericValue,
+        };
+      }
+
+      const nextScaleFields = ['scaleX', 'scaleY', 'scaleZ'] as const;
       return {
         ...object,
-        [field]: nextVector,
+        [nextScaleFields[axisIndex]]: numericValue,
       };
     }),
   );
@@ -109,7 +126,7 @@ function updateVector(
 
 // Updates a single material-related property on the active scene object.
 function updateMaterialField(
-  setSceneObjects: Dispatch<SetStateAction<SceneObject[]>>,
+  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>,
   activeObjectId: string,
   field: 'color' | 'opacity',
   nextValue: string | number,
@@ -185,21 +202,21 @@ function SceneInspector({ activeObject, setSceneObjects }: SceneInspectorProps) 
         <div className="divide-y divide-[color:var(--border-subtle)]">
           <VectorRow
             label="Location"
-            values={activeObject.position}
+            values={[activeObject.positionX, activeObject.positionY, activeObject.positionZ]}
             onChange={(index, value) =>
               updateVector(setSceneObjects, activeObject.id, 'position', index, value)
             }
           />
           <VectorRow
             label="Rotation"
-            values={activeObject.rotation}
+            values={[activeObject.rotationX, activeObject.rotationY, activeObject.rotationZ]}
             onChange={(index, value) =>
               updateVector(setSceneObjects, activeObject.id, 'rotation', index, value)
             }
           />
           <VectorRow
             label="Scale"
-            values={activeObject.scale}
+            values={[activeObject.scaleX, activeObject.scaleY, activeObject.scaleZ]}
             onChange={(index, value) =>
               updateVector(setSceneObjects, activeObject.id, 'scale', index, value)
             }

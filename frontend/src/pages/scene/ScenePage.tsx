@@ -1,19 +1,18 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTheme } from "../../components/theme/ThemeProvider";
-import type { SceneObject } from "../../types/scene";
-import { scenes } from "../../utils/scenes";
 import AddObjectBar from "./AddObjectBar";
 import { SceneCanvas } from "./Canvas";
 import SceneInspector from "./SceneInspector";
 import SceneSidebar from "./SceneSidebar";
 import { getSceneById } from "../../api/scenes";
-import { SceneDto } from "../../types/scenes";
+import { SceneDetailsDto, SceneObjectDto } from "../../types/scenes";
 
 function ScenePage() {
   const { sceneId } = useParams();
   const { theme } = useTheme();
-  const [scene, setScene] = useState<SceneDto | null>(null)
+  const [scene, setScene] = useState<SceneDetailsDto | null>(null);
+  const [sceneObjects, setSceneObjects] = useState<SceneObjectDto[]>([]);
   const isDark = theme === "dark";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -21,7 +20,8 @@ function ScenePage() {
     if (!sceneId) return;
     try {
       const scene = await getSceneById(sceneId);
-      setScene(scene); 
+      setScene(scene);
+      setSceneObjects(scene.objects);
     } catch (error) {
       console.error("Failed to fetch scene", error);
     }
@@ -32,21 +32,7 @@ function ScenePage() {
     fetchScene()
   }, [sceneId]);
 
-  
-  const starterCube: SceneObject = {
-    id: "cube-01",
-    type: "Cube",
-    name: "Starter Cube",
-    position: [0, 0.7, 0],
-    rotation: [0, 0, 0],
-    scale: [1, 1, 1],
-    color: "#fb923c",
-    opacity: 1,
-  };
 
-  const [sceneObjects, setSceneObjects] = useState<SceneObject[]>([
-    starterCube,
-  ]);
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
   const activeObject =
     sceneObjects.find((object) => object.id === activeObjectId) ?? null;
@@ -71,7 +57,7 @@ function ScenePage() {
         >
           <SceneSidebar
             scene={scene}
-            elements={[...sceneObjects]}
+            elements={sceneObjects}
             collapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed((value) => !value)}
             activeObjectId={activeObjectId}
@@ -88,6 +74,7 @@ function ScenePage() {
 
         <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
           <AddObjectBar
+            sceneId={sceneId ?? ""}
             setSceneObjects={setSceneObjects}
             setActiveObjectId={setActiveObjectId}
           />

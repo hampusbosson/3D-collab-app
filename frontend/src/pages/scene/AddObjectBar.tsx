@@ -7,7 +7,8 @@ import {
   SphereIcon,
 } from "../../components/icons/SceneIcons";
 import type { Dispatch, SetStateAction } from "react";
-import type { PrimitiveType, SceneObject } from "../../types/scene";
+import type { PrimitiveType } from "../../types/scene";
+import type { SceneObjectDto } from "../../types/scenes";
 
 type ToolbarPrimitive = {
   id: "cube" | "sphere" | "cylinder" | "cone" | "pyramid" | "plane";
@@ -82,26 +83,40 @@ const primitiveIcons = {
 } as const;
 
 interface AddObjectBarProps {
-  setSceneObjects: Dispatch<SetStateAction<SceneObject[]>>;
+  sceneId: string;
+  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
 }
 
-function createSceneObject(type: PrimitiveType, index: number, id: string): SceneObject {
-  //const objectId = `${type.toLowerCase()}-${crypto.randomUUID()}`;
-
+function createSceneObject(
+  type: PrimitiveType,
+  index: number,
+  id: string,
+  sceneId: string,
+): SceneObjectDto {
   return {
     id,
+    sceneId,
     type,
     name: `${type} ${index + 1}`,
-    position: [0, 0.7, 0],
-    rotation: [0, 0, 0],
-    scale: [1, 1, 1],
+    positionX: 0,
+    positionY: 0.7,
+    positionZ: 0,
+    rotationX: 0,
+    rotationY: 0,
+    rotationZ: 0,
+    scaleX: 1,
+    scaleY: 1,
+    scaleZ: 1,
     color: "#fb923c",
     opacity: 1,
+    createdBy: "Guest",
+    updatedAt: new Date().toISOString(),
   };
 }
 
 function AddObjectBar({
+  sceneId,
   setSceneObjects,
   setActiveObjectId,
 }: AddObjectBarProps) {
@@ -110,7 +125,7 @@ function AddObjectBar({
 
     setSceneObjects((currentObjects) => [
       ...currentObjects,
-      createSceneObject(primitive.sceneType, currentObjects.length, objectId),
+      createSceneObject(primitive.sceneType, currentObjects.length, objectId, sceneId),
     ]);
 
     setActiveObjectId(objectId);

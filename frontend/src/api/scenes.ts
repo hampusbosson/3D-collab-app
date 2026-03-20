@@ -1,13 +1,13 @@
 import { apiClient } from "./client";
-import type { SceneDto, CreateSceneDto } from "../types/scenes";
+import type { SceneDto, CreateSceneDto, SceneDetailsDto } from "../types/scenes";
 
 export async function getScenes(): Promise<SceneDto[]> {
   const response = await apiClient.get<SceneDto[]>("/scenes");
   return response.data;
 }
 
-export async function getSceneById(id: string): Promise<SceneDto> {
-  const response = await apiClient.get<SceneDto>(`/scenes/${id}`);
+export async function getSceneById(id: string): Promise<SceneDetailsDto> {
+  const response = await apiClient.get<SceneDetailsDto>(`/scenes/${id}`);
   return response.data;
 }
 

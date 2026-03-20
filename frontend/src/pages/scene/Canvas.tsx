@@ -2,10 +2,22 @@ import { Grid, OrbitControls, PivotControls } from "@react-three/drei";
 import { Canvas, type MeshProps, type ThreeEvent } from "@react-three/fiber";
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { Matrix4, Vector3, Euler, Quaternion, DoubleSide } from "three";
-import type { SceneObject } from "../../types/scene";
+import type { SceneObjectDto } from "../../types/scenes";
+
+function getPosition(object: SceneObjectDto): [number, number, number] {
+  return [object.positionX, object.positionY, object.positionZ];
+}
+
+function getRotation(object: SceneObjectDto): [number, number, number] {
+  return [object.rotationX, object.rotationY, object.rotationZ];
+}
+
+function getScale(object: SceneObjectDto): [number, number, number] {
+  return [object.scaleX, object.scaleY, object.scaleZ];
+}
 
 interface ObjectMeshProps {
-  object: SceneObject;
+  object: SceneObjectDto;
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
 }
 
@@ -94,11 +106,11 @@ function ObjectMesh({ object, setActiveObjectId }: ObjectMeshProps) {
 }
 
 interface RenderObjectProps {
-  object: SceneObject;
+  object: SceneObjectDto;
   activeObjectId: string | null;
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
   setIsTransforming: Dispatch<SetStateAction<boolean>>;
-  setSceneObjects: Dispatch<SetStateAction<SceneObject[]>>;
+  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
 }
 
 function RenderObject({
@@ -111,14 +123,25 @@ function RenderObject({
   // Stores the latest drag delta reported by PivotControls during the current interaction.
   const dragMatrixRef = useRef(new Matrix4());
   // Remounts PivotControls after a committed transform so its internal delta resets cleanly.
-  const pivotKey = `${object.id}-${object.position.join(",")}-${object.rotation.join(",")}-${object.scale.join(",")}`;
+  const pivotKey = [
+    object.id,
+    object.positionX,
+    object.positionY,
+    object.positionZ,
+    object.rotationX,
+    object.rotationY,
+    object.rotationZ,
+    object.scaleX,
+    object.scaleY,
+    object.scaleZ,
+  ].join(",");
 
   // Combines the object's saved transform with the latest drag delta and writes the result to React state.
   const commitTransform = () => {
-    const basePosition = new Vector3(...object.position);
-    const baseRotation = new Euler(...object.rotation);
+    const basePosition = new Vector3(...getPosition(object));
+    const baseRotation = new Euler(...getRotation(object));
     const baseQuaternion = new Quaternion().setFromEuler(baseRotation);
-    const baseScale = new Vector3(...object.scale);
+    const baseScale = new Vector3(...getScale(object));
     const baseMatrix = new Matrix4().compose(
       basePosition,
       baseQuaternion,
@@ -138,9 +161,15 @@ function RenderObject({
         entry.id === object.id
           ? {
               ...entry,
-              position: [position.x, position.y, position.z],
-              rotation: [rotation.x, rotation.y, rotation.z],
-              scale: [scale.x, scale.y, scale.z],
+              positionX: position.x,
+              positionY: position.y,
+              positionZ: position.z,
+              rotationX: rotation.x,
+              rotationY: rotation.y,
+              rotationZ: rotation.z,
+              scaleX: scale.x,
+              scaleY: scale.y,
+              scaleZ: scale.z,
             }
           : entry
       ),
@@ -150,9 +179,9 @@ function RenderObject({
   if (object.id === activeObjectId) {
     return (
       <group
-        position={object.position}
-        rotation={object.rotation}
-        scale={object.scale}
+        position={getPosition(object)}
+        rotation={getRotation(object)}
+        scale={getScale(object)}
       >
         <PivotControls
           key={pivotKey}
@@ -181,9 +210,9 @@ function RenderObject({
 
   return (
     <group
-      position={object.position}
-      rotation={object.rotation}
-      scale={object.scale}
+      position={getPosition(object)}
+      rotation={getRotation(object)}
+      scale={getScale(object)}
     >
       <ObjectMesh object={object} setActiveObjectId={setActiveObjectId} />
     </group>
@@ -192,10 +221,10 @@ function RenderObject({
 
 interface SceneCanvasProps {
   isDark: boolean;
-  sceneObjects: SceneObject[];
+  sceneObjects: SceneObjectDto[];
   activeObjectId: string | null;
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
-  setSceneObjects: Dispatch<SetStateAction<SceneObject[]>>;
+  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
 }
 
 export function SceneCanvas({

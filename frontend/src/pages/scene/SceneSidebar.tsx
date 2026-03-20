@@ -1,15 +1,12 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import type { SceneObject } from '../../types/scene';
-import type { SceneDto } from '../../types/scenes';
+import type { SceneDetailsDto, SceneObjectDto } from '../../types/scenes';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ConeIcon,
   CubeIcon,
   CylinderIcon,
-  EyeIcon,
-  LockIcon,
   MarkIcon,
   PlaneIcon,
   PyramidIcon,
@@ -18,15 +15,15 @@ import {
 import React from 'react';
 
 interface SceneSidebarProps {
-  scene: SceneDto | null;
-  elements: SceneObject[];
+  scene: SceneDetailsDto | null;
+  elements: SceneObjectDto[];
   collapsed: boolean;
   onToggleCollapse: () => void;
   activeObjectId: string | null;
   setActiveObjectId: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
-function ObjectIcon({ type }: { type: SceneObject['type'] }) {
+function ObjectIcon({ type }: { type: SceneObjectDto['type'] }) {
   if (type === 'Sphere') {
     return <SphereIcon />;
   }
@@ -171,10 +168,7 @@ function SceneSidebar({
                   {element.name}
                 </span>
                 {isActive ? (
-                  <div className="flex items-center gap-0.5 text-[color:var(--text-secondary)]">
-                    {element.visible !== false ? <EyeIcon /> : null}
-                    {element.locked ? <LockIcon /> : null}
-                  </div>
+                  <div className="h-1.5 w-1.5 rounded-full bg-[color:var(--text-secondary)]" />
                 ) : null}
               </button>
             );

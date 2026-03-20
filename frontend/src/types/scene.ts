@@ -17,3 +17,4 @@ export type SceneObject = {
   locked?: boolean;
   visible?: boolean;
 };
+
