@@ -1,3 +1,4 @@
+//UI TYPES
 export type SceneAccent = 'blue' | 'stone' | 'green';
 
 export type ScenePreview = {
@@ -14,3 +15,17 @@ export type SceneSummary = {
   accent: SceneAccent;
   preview: ScenePreview;
 };
+
+
+
+// API / DATA TYPES
+export type SceneDto = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateSceneDto = {
+  name: string;
+}; 
