@@ -7,6 +7,7 @@ import SceneInspector from "./scene-inspector/SceneInspector";
 import SceneSidebar from "./SceneSidebar";
 import { getSceneById, updateScene } from "../../api/scenes";
 import { SceneDetailsDto, SceneObjectDto } from "../../types/scenes";
+import * as signalR from "@microsoft/signalr";
 
 function ScenePage() {
   const { sceneId } = useParams();
@@ -18,6 +19,8 @@ function ScenePage() {
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
   const activeObject =
     sceneObjects.find((object) => object.id === activeObjectId) ?? null;
+
+  const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
 
   const fetchScene = async () => {
     if (!sceneId) return;
@@ -34,6 +37,59 @@ function ScenePage() {
   // Fetch the scene from database
   useEffect(() => {
     fetchScene();
+  }, [sceneId]);
+
+  // Connect user to scene with signalR api
+  useEffect(() => {
+    if (!sceneId) return;
+
+    const userName =
+      sessionStorage.getItem("sceneUserName") ??
+      `Guest-${Math.floor(Math.random() * 1000)}`;
+
+    sessionStorage.setItem("sceneUserName", userName);
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl("https://localhost:7188/hubs/scene")
+      .withAutomaticReconnect()
+      .build();
+
+    let isMounted = true;
+    let started = false;
+
+    connection.on("PresenceUpdated", (users: string[]) => {
+      if (isMounted) {
+        setConnectedUsers(users);
+      }
+    });
+
+    const startConnection = async () => {
+      try {
+        await connection.start();
+        started = true;
+
+        if (!isMounted) return;
+
+        await connection.invoke("JoinScene", sceneId, userName);
+      } catch (error) {
+        if (isMounted) {
+          console.error("Failed to connect to scene hub", error);
+        }
+      }
+    };
+
+    startConnection();
+
+    console.log(connectedUsers);
+
+    return () => {
+      isMounted = false;
+
+      if (started) {
+        connection.invoke("LeaveScene", sceneId).catch(() => {});
+        connection.stop().catch(() => {});
+      }
+    };
   }, [sceneId]);
 
   const handleSceneNameCommit = async (nextName: string) => {
@@ -97,6 +153,7 @@ function ScenePage() {
         >
           <SceneSidebar
             scene={scene}
+            users={connectedUsers}
             elements={sceneObjects}
             collapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed((value) => !value)}

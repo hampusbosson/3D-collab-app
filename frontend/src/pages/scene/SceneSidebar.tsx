@@ -21,6 +21,7 @@ import {
 
 interface SceneSidebarProps {
   scene: SceneDetailsDto | null;
+  users: string[];
   elements: SceneObjectDto[];
   collapsed: boolean;
   onToggleCollapse: () => void;
@@ -74,8 +75,19 @@ function HeaderButton({
   );
 }
 
+function getUserColor(name: string) {
+  const palette = ['#fb923c', '#38bdf8', '#a78bfa', '#34d399', '#f472b6', '#f59e0b'];
+  const hash = Array.from(name).reduce((total, character) => total + character.charCodeAt(0), 0);
+  return palette[hash % palette.length];
+}
+
+function getUserInitial(name: string) {
+  return name.trim().slice(0, 1).toUpperCase() || '?';
+}
+
 function SceneSidebar({
   scene,
+  users,
   elements,
   collapsed,
   onToggleCollapse,
@@ -84,6 +96,18 @@ function SceneSidebar({
   setActiveObjectId,
 }: SceneSidebarProps) {
   const [draftSceneName, setDraftSceneName] = useState(scene?.name ?? '');
+  const currentUserName = sessionStorage.getItem('sceneUserName');
+  const sortedUsers = [...users].sort((leftUser, rightUser) => {
+    if (leftUser === currentUserName) {
+      return -1;
+    }
+
+    if (rightUser === currentUserName) {
+      return 1;
+    }
+
+    return 0;
+  });
 
   useEffect(() => {
     setDraftSceneName(scene?.name ?? '');
@@ -99,7 +123,7 @@ function SceneSidebar({
 
     void onSceneNameCommit(trimmedName);
   };
-
+  
   if (collapsed) {
     return (
       <div className="flex h-full flex-col items-center gap-1.5 rounded-[18px] border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] px-1.5 py-1.5 shadow-[var(--shadow-panel)] backdrop-blur-xl">
@@ -150,6 +174,53 @@ function SceneSidebar({
           <HeaderButton label="Collapse sidebar" onClick={onToggleCollapse}>
             <ChevronLeftIcon />
           </HeaderButton>
+        </div>
+      </div>
+
+      <div className="border-b border-[color:var(--border-subtle)] px-2 py-2">
+        <div className="flex items-center justify-between px-0.5">
+          <p className="text-[0.62rem] font-medium uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+            Active Users
+          </p>
+          <span className="text-[0.68rem] text-[color:var(--text-secondary)]">
+            {users.length}
+          </span>
+        </div>
+
+        <div className="mt-2 max-h-[125px] space-y-1 overflow-y-auto pr-0.5">
+          {sortedUsers.map((user) => {
+            const userColor = getUserColor(user);
+            const isCurrentUser = user === currentUserName;
+
+            return (
+              <div
+                key={user}
+                className="flex items-center gap-2 rounded-[10px] border border-[color:var(--border-subtle)] bg-[var(--surface-elevated)] px-2 py-1.5 shadow-[var(--shadow-soft)]"
+              >
+                <div
+                  className="flex h-6 w-6 items-center justify-center rounded-full text-[0.62rem] font-semibold text-white"
+                  style={{ backgroundColor: userColor }}
+                >
+                  {getUserInitial(user)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[0.74rem] font-medium text-[color:var(--text-primary)]">
+                    {user}
+                  </p>
+                </div>
+                {isCurrentUser ? (
+                  <span className="rounded-full bg-[rgba(251,146,60,0.14)] px-1.5 py-0.5 text-[0.58rem] font-medium uppercase tracking-[0.1em] text-[color:var(--accent-primary)]">
+                    You
+                  </span>
+                ) : (
+                  <div
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{ backgroundColor: userColor }}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

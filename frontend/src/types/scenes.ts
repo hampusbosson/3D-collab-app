@@ -32,7 +32,14 @@ export type CreateSceneDto = {
 
 export type UpdateSceneDto = {
   name: string;
-}
+};
+
+export type SceneUser = {
+  id: string;
+  name: string;
+  color: string;
+  isCurrentUser?: boolean;
+};
 
 export type SceneObjectDto = {
   id: string;
