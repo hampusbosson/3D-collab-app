@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useTheme } from "../../components/theme/ThemeProvider";
 import AddObjectBar from "./AddObjectBar";
 import { SceneCanvas } from "./Canvas";
-import SceneInspector from "./SceneInspector";
+import SceneInspector from "./scene-inspector/SceneInspector";
 import SceneSidebar from "./SceneSidebar";
 import { getSceneById } from "../../api/scenes";
 import { SceneDetailsDto, SceneObjectDto } from "../../types/scenes";
@@ -69,6 +69,7 @@ function ScenePage() {
           <SceneInspector
             activeObject={activeObject}
             setSceneObjects={setSceneObjects}
+            setActiveObjectId={setActiveObjectId}
           />
         </aside>
 
