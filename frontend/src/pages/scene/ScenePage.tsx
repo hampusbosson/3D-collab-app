@@ -38,6 +38,21 @@ function ScenePage() {
   const activeObject =
     sceneObjects.find((object) => object.id === activeObjectId) ?? null;
 
+  const handleSceneNameCommit = async (nextName: string) => {
+    setScene((currentScene) =>
+      currentScene
+        ? {
+            ...currentScene,
+            name: nextName,
+          }
+        : currentScene,
+    );
+
+    // Call your update-scene API here when the backend endpoint is ready.
+    // Example shape:
+    // await updateScene(sceneId, { name: nextName });
+  };
+
   return (
     <div className="min-h-screen bg-(--bg-app) text-(--text-primary)">
       <div className="relative min-h-screen">
@@ -62,6 +77,7 @@ function ScenePage() {
             elements={sceneObjects}
             collapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed((value) => !value)}
+            onSceneNameCommit={handleSceneNameCommit}
             activeObjectId={activeObjectId}
             setActiveObjectId={setActiveObjectId}
           />

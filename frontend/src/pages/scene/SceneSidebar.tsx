@@ -1,4 +1,10 @@
-import type { ReactNode } from 'react';
+import {
+  useEffect,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from 'react';
 import { Link } from 'react-router-dom';
 import type { SceneDetailsDto, SceneObjectDto } from '../../types/scenes';
 import {
@@ -12,16 +18,16 @@ import {
   PyramidIcon,
   SphereIcon,
 } from '../../components/icons/SceneIcons';
-import React from 'react';
 
 interface SceneSidebarProps {
   scene: SceneDetailsDto | null;
   elements: SceneObjectDto[];
   collapsed: boolean;
   onToggleCollapse: () => void;
+  onSceneNameCommit: (nextName: string) => void | Promise<void>;
   activeObjectId: string | null;
-  setActiveObjectId: React.Dispatch<React.SetStateAction<string | null>>;
-};
+  setActiveObjectId: Dispatch<SetStateAction<string | null>>;
+}
 
 function ObjectIcon({ type }: { type: SceneObjectDto['type'] }) {
   if (type === 'Sphere') {
@@ -73,9 +79,27 @@ function SceneSidebar({
   elements,
   collapsed,
   onToggleCollapse,
+  onSceneNameCommit,
   activeObjectId,
-  setActiveObjectId
+  setActiveObjectId,
 }: SceneSidebarProps) {
+  const [draftSceneName, setDraftSceneName] = useState(scene?.name ?? '');
+
+  useEffect(() => {
+    setDraftSceneName(scene?.name ?? '');
+  }, [scene?.name]);
+
+  const commitSceneName = () => {
+    const trimmedName = draftSceneName.trim();
+
+    if (!scene || trimmedName === '' || trimmedName === scene.name) {
+      setDraftSceneName(scene?.name ?? '');
+      return;
+    }
+
+    void onSceneNameCommit(trimmedName);
+  };
+
   if (collapsed) {
     return (
       <div className="flex h-full flex-col items-center gap-1.5 rounded-[18px] border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] px-1.5 py-1.5 shadow-[var(--shadow-panel)] backdrop-blur-xl">
@@ -104,11 +128,25 @@ function SceneSidebar({
           >
             <MarkIcon />
           </Link>
-          <div className="min-w-0 flex-1 rounded-md border border-[color:var(--border-subtle)] bg-[var(--surface-elevated)] px-2.5 py-1 shadow-[var(--shadow-soft)]">
-            <p className="truncate text-[0.86rem] font-semibold tracking-[-0.03em] text-[color:var(--text-primary)]">
-              {scene?.name}
-            </p>
-          </div>
+          <input
+            type="text"
+            value={draftSceneName}
+            onChange={(event) => setDraftSceneName(event.target.value)}
+            onBlur={commitSceneName}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                commitSceneName();
+                event.currentTarget.blur();
+              }
+
+              if (event.key === 'Escape') {
+                setDraftSceneName(scene?.name ?? '');
+                event.currentTarget.blur();
+              }
+            }}
+            placeholder="Untitled scene"
+            className="min-w-0 flex-1 rounded-md border border-[color:var(--border-subtle)] bg-[var(--surface-elevated)] px-2.5 py-1 text-[0.86rem] font-semibold tracking-[-0.03em] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] outline-none placeholder:text-[color:var(--text-muted)]"
+          />
           <HeaderButton label="Collapse sidebar" onClick={onToggleCollapse}>
             <ChevronLeftIcon />
           </HeaderButton>

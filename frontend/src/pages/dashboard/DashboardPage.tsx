@@ -3,6 +3,7 @@ import {
   PlusIcon,
   SearchIcon,
 } from "../../components/icons/DashboardIcons";
+import { useNavigate } from "react-router-dom";
 import ThemeToggle from "../../components/theme/ThemeToggle";
 import { createScene, deleteScene, getScenes } from "../../api/scenes";
 import { SceneDto } from "../../types/scenes";
@@ -11,6 +12,7 @@ import DeleteSceneModal from "./DeleteSceneModal";
 import SceneCard from "./SceneCard";
 
 function DashboardPage() {
+  const navigate = useNavigate();
   const [scenes, setScenes] = useState<SceneDto[]>([]);
   const [scenePendingDelete, setScenePendingDelete] = useState<SceneDto | null>(
     null,
@@ -35,7 +37,7 @@ function DashboardPage() {
     try {
       const newScene = await createScene({ name });
       setScenes((prev) => [newScene, ...prev]);
-      console.log("scene created: ", newScene.name);
+      navigate(`/scene/${newScene.id}`);
     } catch (error) {
       console.error("Failed to create scene", error);
     }
