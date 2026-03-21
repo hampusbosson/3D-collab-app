@@ -82,6 +82,41 @@ public class ScenesController : ControllerBase
         return Ok(SceneObjectToDto(sceneObject));
     }
 
+    [HttpPut("{sceneId:guid}/objects/{objectId:guid}")]
+    public async Task<ActionResult<SceneObjectDto>> UpdateSceneObject(Guid sceneId, Guid objectId, [FromBody] UpdateSceneObjectDto dto)
+    {
+        var sceneObject = await _db.SceneObjects.FirstOrDefaultAsync(o => o.Id == objectId && o.SceneId == sceneId);
+
+        if (sceneObject == null)
+        {
+            return NotFound();
+        }
+
+        sceneObject.Type = dto.Type;
+        sceneObject.Name = string.IsNullOrWhiteSpace(dto.Name) ? dto.Type : dto.Name;
+
+        sceneObject.PositionX = dto.PositionX;
+        sceneObject.PositionY = dto.PositionY;
+        sceneObject.PositionZ = dto.PositionZ;
+
+        sceneObject.RotationX = dto.RotationX;
+        sceneObject.RotationY = dto.RotationY;
+        sceneObject.RotationZ = dto.RotationZ;
+
+        sceneObject.ScaleX = dto.ScaleX;
+        sceneObject.ScaleY = dto.ScaleY;
+        sceneObject.ScaleZ = dto.ScaleZ;
+
+        sceneObject.Color = string.IsNullOrWhiteSpace(dto.Color) ? "#ffffff" : dto.Color;
+        sceneObject.Opacity = dto.Opacity;
+
+        sceneObject.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+
+        return Ok(SceneObjectToDto(sceneObject));
+    }
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<SceneDto>>> GetScenes()
     {
