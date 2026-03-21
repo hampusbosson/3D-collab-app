@@ -5,7 +5,7 @@ import AddObjectBar from "./AddObjectBar";
 import { SceneCanvas } from "./Canvas";
 import SceneInspector from "./scene-inspector/SceneInspector";
 import SceneSidebar from "./SceneSidebar";
-import { getSceneById } from "../../api/scenes";
+import { getSceneById, updateScene } from "../../api/scenes";
 import { SceneDetailsDto, SceneObjectDto } from "../../types/scenes";
 
 function ScenePage() {
@@ -15,30 +15,32 @@ function ScenePage() {
   const [sceneObjects, setSceneObjects] = useState<SceneObjectDto[]>([]);
   const isDark = theme === "dark";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
+  const activeObject =
+    sceneObjects.find((object) => object.id === activeObjectId) ?? null;
 
-  const fetchScene = async() => {
+  const fetchScene = async () => {
     if (!sceneId) return;
     try {
       const scene = await getSceneById(sceneId);
       setScene(scene);
       setSceneObjects(scene.objects);
-      console.log(scene.objects)
+      console.log(scene.objects);
     } catch (error) {
       console.error("Failed to fetch scene", error);
     }
-  }
+  };
 
   // Fetch the scene from database
   useEffect(() => {
-    fetchScene()
+    fetchScene();
   }, [sceneId]);
 
-
-  const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
-  const activeObject =
-    sceneObjects.find((object) => object.id === activeObjectId) ?? null;
-
   const handleSceneNameCommit = async (nextName: string) => {
+    if (!sceneId || !scene) return;
+
+    const previousName = scene.name;
+
     setScene((currentScene) =>
       currentScene
         ? {
@@ -48,9 +50,30 @@ function ScenePage() {
         : currentScene,
     );
 
-    // Call your update-scene API here when the backend endpoint is ready.
-    // Example shape:
-    // await updateScene(sceneId, { name: nextName });
+    try {
+      const updatedScene = await updateScene(sceneId, { name: nextName });
+
+      setScene((currentScene) =>
+        currentScene
+          ? {
+              ...currentScene,
+              name: updatedScene.name,
+              updatedAt: updatedScene.updatedAt,
+            }
+          : currentScene,
+      );
+    } catch (error) {
+      setScene((currentScene) =>
+        currentScene
+          ? {
+              ...currentScene,
+              name: previousName,
+            }
+          : currentScene,
+      );
+
+      console.error("Failed to rename scene", error);
+    }
   };
 
   return (

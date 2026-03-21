@@ -1,5 +1,10 @@
 import { apiClient } from "./client";
-import type { SceneDto, CreateSceneDto, SceneDetailsDto } from "../types/scenes";
+import type {
+  SceneDto,
+  CreateSceneDto,
+  SceneDetailsDto,
+  UpdateSceneDto,
+} from "../types/scenes";
 
 export async function getScenes(): Promise<SceneDto[]> {
   const response = await apiClient.get<SceneDto[]>("/scenes");
@@ -17,5 +22,10 @@ export async function createScene(data: CreateSceneDto): Promise<SceneDto> {
 }
 
 export async function deleteScene(id: string): Promise<void> {
-    await apiClient.delete(`/scenes/${id}`);
+  await apiClient.delete(`/scenes/${id}`);
+}
+
+export async function updateScene(sceneId: string, data: UpdateSceneDto) {
+  const response = await apiClient.put<SceneDto>(`/scenes/${sceneId}`, data);
+  return response.data;
 }

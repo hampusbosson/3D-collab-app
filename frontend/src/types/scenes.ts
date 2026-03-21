@@ -30,6 +30,10 @@ export type CreateSceneDto = {
   name: string;
 };
 
+export type UpdateSceneDto = {
+  name: string;
+}
+
 export type SceneObjectDto = {
   id: string;
   sceneId: string;
