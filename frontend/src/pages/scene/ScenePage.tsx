@@ -22,6 +22,7 @@ function ScenePage() {
       const scene = await getSceneById(sceneId);
       setScene(scene);
       setSceneObjects(scene.objects);
+      console.log(scene.objects)
     } catch (error) {
       console.error("Failed to fetch scene", error);
     }
@@ -67,6 +68,7 @@ function ScenePage() {
 
         <aside className="absolute bottom-4 left-4 right-4 z-10 lg:bottom-4 lg:left-auto lg:right-4 lg:top-4 lg:w-[264px]">
           <SceneInspector
+            sceneId={sceneId}
             activeObject={activeObject}
             setSceneObjects={setSceneObjects}
             setActiveObjectId={setActiveObjectId}
