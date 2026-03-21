@@ -269,3 +269,61 @@ export function LockIcon({
     </svg>
   );
 }
+
+
+export const primitiveIcons = {
+  cube: (
+    <CubeIcon
+      className="h-6 w-6"
+      primaryStroke="var(--text-primary)"
+      secondaryStroke="var(--text-secondary)"
+      primaryStrokeWidth={1.25}
+      secondaryStrokeWidth={1}
+    />
+  ),
+  sphere: (
+    <SphereIcon
+      className="h-6 w-6"
+      primaryStroke="var(--text-primary)"
+      secondaryStroke="var(--text-secondary)"
+      primaryStrokeWidth={1.25}
+      secondaryStrokeWidth={1}
+    />
+  ),
+  cylinder: (
+    <CylinderIcon
+      className="h-6 w-6"
+      primaryStroke="var(--text-primary)"
+      secondaryStroke="var(--text-secondary)"
+      primaryStrokeWidth={1.25}
+      secondaryStrokeWidth={1}
+    />
+  ),
+  cone: (
+    <ConeIcon
+      className="h-6 w-6"
+      primaryStroke="var(--text-primary)"
+      secondaryStroke="var(--text-secondary)"
+      primaryStrokeWidth={1.25}
+      secondaryStrokeWidth={1}
+    />
+  ),
+  pyramid: (
+    <PyramidIcon
+      className="h-6 w-6"
+      primaryStroke="var(--text-primary)"
+      secondaryStroke="var(--text-secondary)"
+      primaryStrokeWidth={1.25}
+      secondaryStrokeWidth={1}
+    />
+  ),
+  plane: (
+    <PlaneIcon
+      className="h-6 w-6"
+      primaryStroke="var(--text-primary)"
+      secondaryStroke="var(--text-secondary)"
+      primaryStrokeWidth={1.25}
+      secondaryStrokeWidth={1}
+    />
+  ),
+} as const;
