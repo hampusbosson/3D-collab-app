@@ -1,5 +1,7 @@
 using api.Data;
 using Microsoft.EntityFrameworkCore;
+using api.Hubs;
+using api.RealTime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +17,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+// CORS CONFIG
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("frontend", policy =>
@@ -26,6 +29,11 @@ builder.Services.AddCors(options =>
             .AllowCredentials();
     });
 });
+
+// SignalR HUB CONFIG - FOR LIVETRACKING
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<PresenceTracker>();
+
 
 var app = builder.Build();
 
@@ -46,5 +54,7 @@ app.UseAuthorization();
 app.UseCors("frontend");
 
 app.MapControllers();
+// mapping to Hub for livetracking
+app.MapHub<SceneHub>("/hubs/scene");
 
 app.Run();
