@@ -62,6 +62,7 @@ function SceneInspector({
       />
 
       <MaterialSection
+        sceneId={sceneId}
         activeObject={activeObject}
         setSceneObjects={setSceneObjects}
       />

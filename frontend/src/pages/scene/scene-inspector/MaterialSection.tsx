@@ -1,31 +1,66 @@
 import type { Dispatch, SetStateAction } from 'react';
-import type { SceneObjectDto } from '../../../types/scenes';
+import { updateSceneObject } from '../../../api/sceneObjects';
+import type { SceneObjectDto, UpdateSceneObjectDto } from '../../../types/scenes';
 import InspectorSection from './InspectorSection';
 
 interface MaterialSectionProps {
+  sceneId: string;
   activeObject: SceneObjectDto;
   setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
 }
 
-function updateMaterialField(
+async function updateMaterialField(
+  sceneId: string,
+  activeObject: SceneObjectDto,
   setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>,
-  activeObjectId: string,
   field: 'color' | 'opacity',
   nextValue: string | number,
 ) {
+  const nextObject: SceneObjectDto = {
+    ...activeObject,
+    [field]: nextValue,
+  };
+  const updatePayload: UpdateSceneObjectDto = {
+    type: nextObject.type,
+    name: nextObject.name,
+    positionX: nextObject.positionX,
+    positionY: nextObject.positionY,
+    positionZ: nextObject.positionZ,
+    rotationX: nextObject.rotationX,
+    rotationY: nextObject.rotationY,
+    rotationZ: nextObject.rotationZ,
+    scaleX: nextObject.scaleX,
+    scaleY: nextObject.scaleY,
+    scaleZ: nextObject.scaleZ,
+    color: nextObject.color,
+    opacity: nextObject.opacity,
+  };
+
   setSceneObjects((objects) =>
     objects.map((object) =>
-      object.id === activeObjectId
-        ? {
-            ...object,
-            [field]: nextValue,
-          }
-        : object,
+      object.id === activeObject.id ? nextObject : object,
     ),
   );
+
+  try {
+    const persistedObject = await updateSceneObject(
+      sceneId,
+      activeObject.id,
+      updatePayload,
+    );
+
+    setSceneObjects((objects) =>
+      objects.map((object) =>
+        object.id === persistedObject.id ? persistedObject : object,
+      ),
+    );
+  } catch (error) {
+    console.error('Failed to persist object material', error);
+  }
 }
 
 function MaterialSection({
+  sceneId,
   activeObject,
   setSceneObjects,
 }: MaterialSectionProps) {
@@ -41,7 +76,13 @@ function MaterialSection({
               type="color"
               value={activeObject.color}
               onChange={(event) =>
-                updateMaterialField(setSceneObjects, activeObject.id, 'color', event.target.value)
+                void updateMaterialField(
+                  sceneId,
+                  activeObject,
+                  setSceneObjects,
+                  'color',
+                  event.target.value,
+                )
               }
               className="h-7 w-9 rounded border-none bg-transparent p-0"
             />
@@ -67,9 +108,10 @@ function MaterialSection({
             step="0.01"
             value={activeObject.opacity}
             onChange={(event) =>
-              updateMaterialField(
+              void updateMaterialField(
+                sceneId,
+                activeObject,
                 setSceneObjects,
-                activeObject.id,
                 'opacity',
                 Number(event.target.value),
               )
