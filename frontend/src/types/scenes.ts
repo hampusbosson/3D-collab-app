@@ -1,7 +1,7 @@
-import type { PrimitiveType } from './scene';
+import type { PrimitiveType } from "./scene";
 
 //UI TYPES
-export type SceneAccent = 'blue' | 'stone' | 'green';
+export type SceneAccent = "blue" | "stone" | "green";
 
 export type ScenePreview = {
   primary: string;
@@ -18,8 +18,6 @@ export type SceneSummary = {
   preview: ScenePreview;
 };
 
-
-
 // API / DATA TYPES
 export type SceneDto = {
   id: string;
@@ -30,7 +28,7 @@ export type SceneDto = {
 
 export type CreateSceneDto = {
   name: string;
-}; 
+};
 
 export type SceneObjectDto = {
   id: string;
@@ -50,6 +48,22 @@ export type SceneObjectDto = {
   opacity: number;
   createdBy: string;
   updatedAt: string;
+};
+
+export type CreateSceneObjectDto = {
+  type: string;
+  name: string;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  rotationX: number;
+  rotationY: number;
+  rotationZ: number;
+  scaleX: number;
+  scaleY: number;
+  scaleZ: number;
+  color: string;
+  opacity: number;
 };
 
 export type SceneDetailsDto = {

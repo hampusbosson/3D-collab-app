@@ -1,14 +1,8 @@
-import {
-  ConeIcon,
-  CubeIcon,
-  CylinderIcon,
-  PlaneIcon,
-  PyramidIcon,
-  SphereIcon,
-} from "../../components/icons/SceneIcons";
+import { primitiveIcons } from "../../components/icons/SceneIcons";
 import type { Dispatch, SetStateAction } from "react";
 import type { PrimitiveType } from "../../types/scene";
-import type { SceneObjectDto } from "../../types/scenes";
+import type { CreateSceneObjectDto, SceneObjectDto } from "../../types/scenes";
+import { addObjectToScene } from "../../api/sceneObjects";
 
 type ToolbarPrimitive = {
   id: "cube" | "sphere" | "cylinder" | "cone" | "pyramid" | "plane";
@@ -25,78 +19,18 @@ const primitiveButtons: ToolbarPrimitive[] = [
   { id: "plane", label: "Add plane", sceneType: "Plane" },
 ] as const;
 
-const primitiveIcons = {
-  cube: (
-    <CubeIcon
-      className="h-6 w-6"
-      primaryStroke="var(--text-primary)"
-      secondaryStroke="var(--text-secondary)"
-      primaryStrokeWidth={1.25}
-      secondaryStrokeWidth={1}
-    />
-  ),
-  sphere: (
-    <SphereIcon
-      className="h-6 w-6"
-      primaryStroke="var(--text-primary)"
-      secondaryStroke="var(--text-secondary)"
-      primaryStrokeWidth={1.25}
-      secondaryStrokeWidth={1}
-    />
-  ),
-  cylinder: (
-    <CylinderIcon
-      className="h-6 w-6"
-      primaryStroke="var(--text-primary)"
-      secondaryStroke="var(--text-secondary)"
-      primaryStrokeWidth={1.25}
-      secondaryStrokeWidth={1}
-    />
-  ),
-  cone: (
-    <ConeIcon
-      className="h-6 w-6"
-      primaryStroke="var(--text-primary)"
-      secondaryStroke="var(--text-secondary)"
-      primaryStrokeWidth={1.25}
-      secondaryStrokeWidth={1}
-    />
-  ),
-  pyramid: (
-    <PyramidIcon
-      className="h-6 w-6"
-      primaryStroke="var(--text-primary)"
-      secondaryStroke="var(--text-secondary)"
-      primaryStrokeWidth={1.25}
-      secondaryStrokeWidth={1}
-    />
-  ),
-  plane: (
-    <PlaneIcon
-      className="h-6 w-6"
-      primaryStroke="var(--text-primary)"
-      secondaryStroke="var(--text-secondary)"
-      primaryStrokeWidth={1.25}
-      secondaryStrokeWidth={1}
-    />
-  ),
-} as const;
-
 interface AddObjectBarProps {
   sceneId: string;
   setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
+  sceneObjects: SceneObjectDto[];
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
 }
 
-function createSceneObject(
+function createSceneObjectPayload(
   type: PrimitiveType,
   index: number,
-  id: string,
-  sceneId: string,
-): SceneObjectDto {
+): CreateSceneObjectDto {
   return {
-    id,
-    sceneId,
     type,
     name: `${type} ${index + 1}`,
     positionX: 0,
@@ -110,25 +44,29 @@ function createSceneObject(
     scaleZ: 1,
     color: "#fb923c",
     opacity: 1,
-    createdBy: "Guest",
-    updatedAt: new Date().toISOString(),
   };
 }
 
 function AddObjectBar({
   sceneId,
   setSceneObjects,
+  sceneObjects,
   setActiveObjectId,
 }: AddObjectBarProps) {
-  const handleButtonClick = (primitive: ToolbarPrimitive) => {
-    const objectId = `${primitive.sceneType.toLowerCase()}-${crypto.randomUUID()}`;
+  const handleButtonClick = async (primitive: ToolbarPrimitive) => {
+    try {
+      const payload = createSceneObjectPayload(
+        primitive.sceneType,
+        sceneObjects.length,
+      );
 
-    setSceneObjects((currentObjects) => [
-      ...currentObjects,
-      createSceneObject(primitive.sceneType, currentObjects.length, objectId, sceneId),
-    ]);
+      const createdObject = await addObjectToScene(sceneId, payload);
 
-    setActiveObjectId(objectId);
+      setSceneObjects((currentObjects) => [...currentObjects, createdObject]);
+      setActiveObjectId(createdObject.id);
+    } catch (error) {
+      console.error("Failed to add object to scene", error);
+    }
   };
 
   return (

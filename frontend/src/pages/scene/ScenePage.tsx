@@ -76,6 +76,7 @@ function ScenePage() {
           <AddObjectBar
             sceneId={sceneId ?? ""}
             setSceneObjects={setSceneObjects}
+            sceneObjects={sceneObjects}
             setActiveObjectId={setActiveObjectId}
           />
         </div>
