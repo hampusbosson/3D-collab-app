@@ -82,6 +82,23 @@ public class ScenesController : ControllerBase
         return Ok(SceneObjectToDto(sceneObject));
     }
 
+    [HttpPut("{sceneId:guid}")]
+    public async Task<ActionResult<SceneDto>> updateScene(Guid sceneId, [FromBody] UpdateSceneDto dto)
+    {
+        var scene = await _db.Scenes.FirstOrDefaultAsync(s => s.Id == sceneId);
+
+        if (scene == null)
+        {
+            return NotFound();
+        }
+
+        scene.Name = dto.Name;
+        scene.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+        return Ok(SceneToDTO(scene));
+    }
+
     [HttpPut("{sceneId:guid}/objects/{objectId:guid}")]
     public async Task<ActionResult<SceneObjectDto>> UpdateSceneObject(Guid sceneId, Guid objectId, [FromBody] UpdateSceneObjectDto dto)
     {
