@@ -127,6 +127,22 @@ public class ScenesController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("{sceneId:guid}/objects/{objectId:guid}")]
+    public async Task<IActionResult> DeleteSceneObject(Guid sceneId, Guid objectId)
+    {
+        var sceneObject = await _db.SceneObjects.FirstOrDefaultAsync(o => o.Id == objectId && o.SceneId == sceneId);
+
+        if (sceneObject == null)
+        {
+            return NotFound();
+        }
+
+        _db.SceneObjects.Remove(sceneObject);
+        await _db.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     private static SceneDto SceneToDTO(Scene scene) => new SceneDto
     {
         Id = scene.Id,
