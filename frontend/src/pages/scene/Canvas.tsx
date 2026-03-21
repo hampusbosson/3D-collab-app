@@ -2,7 +2,8 @@ import { Grid, OrbitControls, PivotControls } from "@react-three/drei";
 import { Canvas, type MeshProps, type ThreeEvent } from "@react-three/fiber";
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { Matrix4, Vector3, Euler, Quaternion, DoubleSide } from "three";
-import type { SceneObjectDto } from "../../types/scenes";
+import { updateSceneObject } from "../../api/sceneObjects";
+import type { SceneObjectDto, UpdateSceneObjectDto } from "../../types/scenes";
 
 function getPosition(object: SceneObjectDto): [number, number, number] {
   return [object.positionX, object.positionY, object.positionZ];
@@ -106,6 +107,7 @@ function ObjectMesh({ object, setActiveObjectId }: ObjectMeshProps) {
 }
 
 interface RenderObjectProps {
+  sceneId: string;
   object: SceneObjectDto;
   activeObjectId: string | null;
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
@@ -114,6 +116,7 @@ interface RenderObjectProps {
 }
 
 function RenderObject({
+  sceneId,
   object,
   activeObjectId,
   setActiveObjectId,
@@ -137,7 +140,7 @@ function RenderObject({
   ].join(",");
 
   // Combines the object's saved transform with the latest drag delta and writes the result to React state.
-  const commitTransform = () => {
+  const commitTransform = async () => {
     const basePosition = new Vector3(...getPosition(object));
     const baseRotation = new Euler(...getRotation(object));
     const baseQuaternion = new Quaternion().setFromEuler(baseRotation);
@@ -155,25 +158,55 @@ function RenderObject({
     baseMatrix.decompose(position, quaternion, scale);
 
     const rotation = new Euler().setFromQuaternion(quaternion);
+    const nextObject: SceneObjectDto = {
+      ...object,
+      positionX: position.x,
+      positionY: position.y,
+      positionZ: position.z,
+      rotationX: rotation.x,
+      rotationY: rotation.y,
+      rotationZ: rotation.z,
+      scaleX: scale.x,
+      scaleY: scale.y,
+      scaleZ: scale.z,
+    };
+    const updatePayload: UpdateSceneObjectDto = {
+      type: nextObject.type,
+      name: nextObject.name,
+      positionX: nextObject.positionX,
+      positionY: nextObject.positionY,
+      positionZ: nextObject.positionZ,
+      rotationX: nextObject.rotationX,
+      rotationY: nextObject.rotationY,
+      rotationZ: nextObject.rotationZ,
+      scaleX: nextObject.scaleX,
+      scaleY: nextObject.scaleY,
+      scaleZ: nextObject.scaleZ,
+      color: nextObject.color,
+      opacity: nextObject.opacity,
+    };
 
     setSceneObjects((objects) =>
       objects.map((entry) =>
-        entry.id === object.id
-          ? {
-              ...entry,
-              positionX: position.x,
-              positionY: position.y,
-              positionZ: position.z,
-              rotationX: rotation.x,
-              rotationY: rotation.y,
-              rotationZ: rotation.z,
-              scaleX: scale.x,
-              scaleY: scale.y,
-              scaleZ: scale.z,
-            }
-          : entry
+        entry.id === object.id ? nextObject : entry
       ),
     );
+
+    try {
+      const persistedObject = await updateSceneObject(
+        sceneId,
+        object.id,
+        updatePayload,
+      );
+
+      setSceneObjects((objects) =>
+        objects.map((entry) =>
+          entry.id === persistedObject.id ? persistedObject : entry,
+        ),
+      );
+    } catch (error) {
+      console.error("Failed to persist object transform", error);
+    }
   };
 
   if (object.id === activeObjectId) {
@@ -196,9 +229,9 @@ function RenderObject({
             // Keep the most recent drag delta so it can be committed once on drag end.
             dragMatrixRef.current.copy(localMatrix);
           }}
-          onDragEnd={() => {
+          onDragEnd={async () => {
             // Persist the final transform to scene state, then re-enable orbit controls.
-            commitTransform();
+            await commitTransform();
             setIsTransforming(false);
           }}
         >
@@ -220,6 +253,7 @@ function RenderObject({
 }
 
 interface SceneCanvasProps {
+  sceneId: string;
   isDark: boolean;
   sceneObjects: SceneObjectDto[];
   activeObjectId: string | null;
@@ -228,6 +262,7 @@ interface SceneCanvasProps {
 }
 
 export function SceneCanvas({
+  sceneId,
   isDark,
   sceneObjects,
   activeObjectId,
@@ -267,6 +302,7 @@ export function SceneCanvas({
       {sceneObjects.map((object) => (
         <RenderObject
           key={object.id}
+          sceneId={sceneId}
           object={object}
           activeObjectId={activeObjectId}
           setActiveObjectId={setActiveObjectId}

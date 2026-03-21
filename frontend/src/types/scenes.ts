@@ -73,3 +73,19 @@ export type SceneDetailsDto = {
   updatedAt: string;
   objects: SceneObjectDto[];
 };
+
+export type UpdateSceneObjectDto = {
+  type: string;
+  name: string;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  rotationX: number;
+  rotationY: number;
+  rotationZ: number;
+  scaleX: number;
+  scaleY: number;
+  scaleZ: number;
+  color: string;
+  opacity: number;
+};

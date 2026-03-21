@@ -43,6 +43,7 @@ function ScenePage() {
       <div className="relative min-h-screen">
         <div className="absolute inset-0">
           <SceneCanvas
+            sceneId={sceneId ?? ""}
             isDark={isDark}
             sceneObjects={sceneObjects}
             activeObjectId={activeObjectId}
@@ -68,7 +69,7 @@ function ScenePage() {
 
         <aside className="absolute bottom-4 left-4 right-4 z-10 lg:bottom-4 lg:left-auto lg:right-4 lg:top-4 lg:w-[264px]">
           <SceneInspector
-            sceneId={sceneId}
+            sceneId={sceneId ?? ""}
             activeObject={activeObject}
             setSceneObjects={setSceneObjects}
             setActiveObjectId={setActiveObjectId}
