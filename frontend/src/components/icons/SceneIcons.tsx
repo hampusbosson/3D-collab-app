@@ -270,6 +270,29 @@ export function LockIcon({
   );
 }
 
+export function HelpCircleIcon({
+  className = 'h-4 w-4',
+  stroke = 'currentColor',
+  strokeWidth = 1.8,
+}: SingleToneIconProps = {}) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 21C16.97 21 21 16.97 21 12C21 7.03 16.97 3 12 3C7.03 3 3 7.03 3 12C3 16.97 7.03 21 12 21Z"
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+      />
+      <path
+        d="M9.75 9.3C9.75 8.06 10.88 7.1 12.26 7.1C13.65 7.1 14.75 7.94 14.75 9.16C14.75 10.17 14.22 10.72 13.16 11.35C12.14 11.95 11.75 12.42 11.75 13.4V13.75M12 17.25H12.01"
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 
 export const primitiveIcons = {
   cube: (

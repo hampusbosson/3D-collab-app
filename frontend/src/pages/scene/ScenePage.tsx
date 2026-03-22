@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import { HelpCircleIcon } from "../../components/icons/SceneIcons";
 import { useTheme } from "../../components/theme/ThemeProvider";
 import AddObjectBar from "./AddObjectBar";
 import { SceneCanvas } from "./Canvas";
+import SceneOnboardingModal from "./SceneOnboardingModal";
 import SceneInspector from "./scene-inspector/SceneInspector";
 import SceneSidebar from "./SceneSidebar";
 import { getSceneById, updateScene } from "../../api/scenes";
 import { SceneDetailsDto, SceneObjectDto } from "../../types/scenes";
 import * as signalR from "@microsoft/signalr";
+
+const sceneOnboardingPreferenceKey = "scene-onboarding-hidden";
 
 function ScenePage() {
   const { sceneId } = useParams();
@@ -16,6 +20,8 @@ function ScenePage() {
   const [sceneObjects, setSceneObjects] = useState<SceneObjectDto[]>([]);
   const isDark = theme === "dark";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [dontShowOnboardingAgain, setDontShowOnboardingAgain] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
   const activeObject =
     sceneObjects.find((object) => object.id === activeObjectId) ?? null;
@@ -39,6 +45,14 @@ function ScenePage() {
   useEffect(() => {
     fetchScene();
   }, [sceneId]);
+
+  useEffect(() => {
+    const shouldHideOnboarding =
+      localStorage.getItem(sceneOnboardingPreferenceKey) === "true";
+
+    setDontShowOnboardingAgain(shouldHideOnboarding);
+    setIsOnboardingOpen(!shouldHideOnboarding);
+  }, []);
 
   // Connect user to scene with signalR api
   useEffect(() => {
@@ -155,6 +169,14 @@ function ScenePage() {
     }
   };
 
+  const handleOnboardingClose = () => {
+    localStorage.setItem(
+      sceneOnboardingPreferenceKey,
+      String(dontShowOnboardingAgain),
+    );
+    setIsOnboardingOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-(--bg-app) text-(--text-primary)">
       <div className="relative min-h-screen">
@@ -196,15 +218,32 @@ function ScenePage() {
           />
         </aside>
 
+        <div className="absolute right-4 top-4 z-10 lg:right-72">
+          <button
+            type="button"
+            aria-label="Open scene help"
+            onClick={() => setIsOnboardingOpen(true)}
+            className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)] backdrop-blur-xl transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
+          >
+            <HelpCircleIcon />
+          </button>
+        </div>
+
         <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
           <AddObjectBar
             sceneId={sceneId ?? ""}
             connectionRef={connectionRef}
             sceneObjects={sceneObjects}
-            setActiveObjectId={setActiveObjectId}
           />
         </div>
       </div>
+
+      <SceneOnboardingModal
+        isOpen={isOnboardingOpen}
+        dontShowAgain={dontShowOnboardingAgain}
+        onDontShowAgainChange={setDontShowOnboardingAgain}
+        onClose={handleOnboardingClose}
+      />
     </div>
   );
 }

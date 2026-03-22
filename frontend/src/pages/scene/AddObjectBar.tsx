@@ -1,6 +1,6 @@
 import type { HubConnection } from "@microsoft/signalr";
 import { primitiveIcons } from "../../components/icons/SceneIcons";
-import type { Dispatch, MutableRefObject, SetStateAction } from "react";
+import type { MutableRefObject } from "react";
 import type { PrimitiveType } from "../../types/scene";
 import type { CreateSceneObjectDto, SceneObjectDto } from "../../types/scenes";
 
@@ -23,7 +23,6 @@ interface AddObjectBarProps {
   sceneId: string;
   connectionRef: MutableRefObject<HubConnection | null>;
   sceneObjects: SceneObjectDto[];
-  setActiveObjectId: Dispatch<SetStateAction<string | null>>;
 }
 
 function createSceneObjectPayload(
@@ -51,7 +50,6 @@ function AddObjectBar({
   sceneId,
   connectionRef,
   sceneObjects,
-  setActiveObjectId,
 }: AddObjectBarProps) {
   const handleButtonClick = async (primitive: ToolbarPrimitive) => {
     try {
