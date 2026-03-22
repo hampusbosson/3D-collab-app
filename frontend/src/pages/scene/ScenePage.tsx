@@ -12,6 +12,8 @@ import { SceneDetailsDto, SceneObjectDto } from "../../types/scenes";
 import * as signalR from "@microsoft/signalr";
 
 const sceneOnboardingPreferenceKey = "scene-onboarding-hidden";
+const signalRHubUrl =
+  import.meta.env.VITE_SIGNALR_HUB_URL ?? "https://localhost:7188/hubs/scene";
 
 function ScenePage() {
   const { sceneId } = useParams();
@@ -65,7 +67,7 @@ function ScenePage() {
     sessionStorage.setItem("sceneUserName", userName);
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl("https://localhost:7188/hubs/scene")
+      .withUrl(signalRHubUrl)
       .withAutomaticReconnect()
       .build();
 

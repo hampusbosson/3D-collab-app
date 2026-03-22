@@ -1,6 +1,59 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
+  --bg-app:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.85), transparent 28%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  --bg-canvas: #eef2f7;
+  --surface-sidebar: rgba(255, 255, 255, 0.7);
+  --surface-panel: rgba(255, 255, 255, 0.55);
+  --surface-elevated: rgba(255, 255, 255, 0.85);
+  --surface-muted: rgba(248, 250, 252, 0.8);
+  --surface-strong: #0f172a;
+  --surface-soft: rgba(148, 163, 184, 0.12);
+  --border-subtle: rgba(148, 163, 184, 0.22);
+  --border-strong: rgba(15, 23, 42, 0.12);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #f8fafc;
+  --text-on-strong: #f8fafc;
+  --accent-primary: #0f172a;
+  --accent-contrast: #f8fafc;
+  --accent-danger-bg: #fef2f2;
+  --accent-danger-border: #fecaca;
+  --accent-danger-text: #dc2626;
+  --badge-blue-start: #dbeafe;
+  --badge-blue-mid: #7dd3fc;
+  --badge-blue-end: #ffffff;
+  --badge-stone-start: #e7e5e4;
+  --badge-stone-mid: #cbd5e1;
+  --badge-stone-end: #ffffff;
+  --badge-green-start: #d1fae5;
+  --badge-green-mid: #5eead4;
+  --badge-green-end: #ffffff;
+  --shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.06);
+  --shadow-panel: 0 30px 80px rgba(15, 23, 42, 0.06);
+  --shadow-card: 0 24px 60px rgba(15, 23, 42, 0.08);
+  font-family:
+    "SF Pro Display",
+    "SF Pro Text",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[data-theme="dark"] {
   color-scheme: dark;
   --bg-app:
     radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 24%),
@@ -37,59 +90,6 @@
   --shadow-soft: 0 18px 40px rgba(2, 6, 23, 0.22);
   --shadow-panel: 0 30px 80px rgba(2, 6, 23, 0.24);
   --shadow-card: 0 24px 60px rgba(2, 6, 23, 0.2);
-  font-family:
-    "SF Pro Display",
-    "SF Pro Text",
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-[data-theme="light"] {
-  color-scheme: light;
-  --bg-app:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.85), transparent 28%),
-    linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
-  --bg-canvas: #eef2f7;
-  --surface-sidebar: rgba(255, 255, 255, 0.7);
-  --surface-panel: rgba(255, 255, 255, 0.55);
-  --surface-elevated: rgba(255, 255, 255, 0.85);
-  --surface-muted: rgba(248, 250, 252, 0.8);
-  --surface-strong: #0f172a;
-  --surface-soft: rgba(148, 163, 184, 0.12);
-  --border-subtle: rgba(148, 163, 184, 0.22);
-  --border-strong: rgba(15, 23, 42, 0.12);
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --text-inverse: #f8fafc;
-  --text-on-strong: #f8fafc;
-  --accent-primary: #0f172a;
-  --accent-contrast: #f8fafc;
-  --accent-danger-bg: #fef2f2;
-  --accent-danger-border: #fecaca;
-  --accent-danger-text: #dc2626;
-  --badge-blue-start: #dbeafe;
-  --badge-blue-mid: #7dd3fc;
-  --badge-blue-end: #ffffff;
-  --badge-stone-start: #e7e5e4;
-  --badge-stone-mid: #cbd5e1;
-  --badge-stone-end: #ffffff;
-  --badge-green-start: #d1fae5;
-  --badge-green-mid: #5eead4;
-  --badge-green-end: #ffffff;
-  --shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.06);
-  --shadow-panel: 0 30px 80px rgba(15, 23, 42, 0.06);
-  --shadow-card: 0 24px 60px rgba(15, 23, 42, 0.08);
 }
 
 * {
