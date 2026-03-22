@@ -72,7 +72,7 @@ public class ScenesController : ControllerBase
 
             Color = string.IsNullOrWhiteSpace(objectDto.Color) ? "#ffffff" : objectDto.Color,
             Opacity = objectDto.Opacity,
-            CreatedBy = "Hampus",
+            CreatedBy = "system",
             UpdatedAt = DateTime.UtcNow
         };
 
