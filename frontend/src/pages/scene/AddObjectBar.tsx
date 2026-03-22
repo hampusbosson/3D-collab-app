@@ -1,8 +1,8 @@
+import type { HubConnection } from "@microsoft/signalr";
 import { primitiveIcons } from "../../components/icons/SceneIcons";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type { PrimitiveType } from "../../types/scene";
 import type { CreateSceneObjectDto, SceneObjectDto } from "../../types/scenes";
-import { addObjectToScene } from "../../api/sceneObjects";
 
 type ToolbarPrimitive = {
   id: "cube" | "sphere" | "cylinder" | "cone" | "pyramid" | "plane";
@@ -21,7 +21,7 @@ const primitiveButtons: ToolbarPrimitive[] = [
 
 interface AddObjectBarProps {
   sceneId: string;
-  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
+  connectionRef: MutableRefObject<HubConnection | null>;
   sceneObjects: SceneObjectDto[];
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
 }
@@ -49,7 +49,7 @@ function createSceneObjectPayload(
 
 function AddObjectBar({
   sceneId,
-  setSceneObjects,
+  connectionRef,
   sceneObjects,
   setActiveObjectId,
 }: AddObjectBarProps) {
@@ -60,10 +60,7 @@ function AddObjectBar({
         sceneObjects.length,
       );
 
-      const createdObject = await addObjectToScene(sceneId, payload);
-
-      setSceneObjects((currentObjects) => [...currentObjects, createdObject]);
-      setActiveObjectId(createdObject.id);
+      await connectionRef.current?.invoke("AddObject", sceneId, payload); 
     } catch (error) {
       console.error("Failed to add object to scene", error);
     }

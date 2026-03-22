@@ -1,8 +1,8 @@
 import { Grid, OrbitControls, TransformControls } from "@react-three/drei";
 import { Canvas, type MeshProps, type ThreeEvent, useThree } from "@react-three/fiber";
-import { useState, type Dispatch, type SetStateAction } from "react";
+import type { HubConnection } from "@microsoft/signalr";
+import { useEffect, useState, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import { DoubleSide, Group } from "three";
-import { updateSceneObject } from "../../api/sceneObjects";
 import type { SceneObjectDto, UpdateSceneObjectDto } from "../../types/scenes";
 
 const transformModes = ["translate", "rotate", "scale"] as const;
@@ -190,6 +190,7 @@ interface ActiveTransformControlsProps {
   activeObjectId: string | null;
   activeObject: SceneObjectDto | null;
   mode: TransformMode;
+  connectionRef: MutableRefObject<HubConnection | null>;
   setIsTransformDragging: Dispatch<SetStateAction<boolean>>;
   setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
 }
@@ -199,18 +200,23 @@ function ActiveTransformControls({
   activeObjectId,
   activeObject,
   mode,
+  connectionRef,
   setIsTransformDragging,
   setSceneObjects,
 }: ActiveTransformControlsProps) {
   const scene = useThree((state) => state.scene);
+  const [target, setTarget] = useState<Group | null>(null);
 
-  if (!activeObjectId || !activeObject) {
-    return null;
-  }
+  useEffect(() => {
+    if (!activeObjectId || !activeObject) {
+      setTarget(null);
+      return;
+    }
 
-  const target = scene.getObjectByName(activeObjectId) as Group | undefined;
+    setTarget(scene.getObjectByName(activeObjectId) as Group | null);
+  }, [scene, activeObjectId, activeObject]);
 
-  if (!target) {
+  if (!activeObjectId || !activeObject || !target) {
     return null;
   }
 
@@ -230,16 +236,11 @@ function ActiveTransformControls({
     );
 
     try {
-      const persistedObject = await updateSceneObject(
+      await connectionRef.current?.invoke(
+        "UpdateObject",
         sceneId,
         activeObject.id,
         createUpdatePayload(nextObject),
-      );
-
-      setSceneObjects((objects) =>
-        objects.map((entry) =>
-          entry.id === persistedObject.id ? persistedObject : entry,
-        ),
       );
     } catch (error) {
       console.error("Failed to persist object transform", error);
@@ -265,6 +266,7 @@ function ActiveTransformControls({
 interface SceneCanvasProps {
   sceneId: string;
   isDark: boolean;
+  connectionRef: MutableRefObject<HubConnection | null>;
   sceneObjects: SceneObjectDto[];
   activeObjectId: string | null;
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
@@ -274,6 +276,7 @@ interface SceneCanvasProps {
 export function SceneCanvas({
   sceneId,
   isDark,
+  connectionRef,
   sceneObjects,
   activeObjectId,
   setActiveObjectId,
@@ -360,6 +363,7 @@ export function SceneCanvas({
         activeObjectId={activeObjectId}
         activeObject={activeObject}
         mode={transformMode}
+        connectionRef={connectionRef}
         setIsTransformDragging={setIsTransformDragging}
         setSceneObjects={setSceneObjects}
       />

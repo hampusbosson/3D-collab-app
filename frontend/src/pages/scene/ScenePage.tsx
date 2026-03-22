@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTheme } from "../../components/theme/ThemeProvider";
 import AddObjectBar from "./AddObjectBar";
@@ -21,6 +21,7 @@ function ScenePage() {
     sceneObjects.find((object) => object.id === activeObjectId) ?? null;
 
   const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
+  const connectionRef = useRef<signalR.HubConnection | null>(null);
 
   const fetchScene = async () => {
     if (!sceneId) return;
@@ -54,6 +55,8 @@ function ScenePage() {
       .withAutomaticReconnect()
       .build();
 
+    connectionRef.current = connection;
+
     let isMounted = true;
     let started = false;
 
@@ -61,6 +64,28 @@ function ScenePage() {
       if (isMounted) {
         setConnectedUsers(users);
       }
+    });
+
+    connection.on("ObjectUpdated", (updatedObject: SceneObjectDto) => {
+      setSceneObjects((currentObjects) =>
+        currentObjects.map((obj) =>
+          obj.id === updatedObject.id ? updatedObject : obj,
+        ),
+      );
+    });
+
+    connection.on("ObjectAdded", (addedObject: SceneObjectDto) => {
+      setSceneObjects((currentObjects) => [...currentObjects, addedObject]);
+      setActiveObjectId(addedObject.id);
+    });
+
+    connection.on("ObjectDeleted", (objectId: string) => {
+      setSceneObjects((currentObjects) =>
+        currentObjects.filter((object) => object.id !== objectId),
+      );
+      setActiveObjectId((currentActiveObjectId) =>
+        currentActiveObjectId === objectId ? null : currentActiveObjectId,
+      );
     });
 
     const startConnection = async () => {
@@ -78,9 +103,7 @@ function ScenePage() {
       }
     };
 
-    startConnection();
-
-    console.log(connectedUsers);
+    startConnection(); 
 
     return () => {
       isMounted = false;
@@ -139,6 +162,7 @@ function ScenePage() {
           <SceneCanvas
             sceneId={sceneId ?? ""}
             isDark={isDark}
+            connectionRef={connectionRef}
             sceneObjects={sceneObjects}
             activeObjectId={activeObjectId}
             setActiveObjectId={setActiveObjectId}
@@ -166,16 +190,16 @@ function ScenePage() {
         <aside className="absolute bottom-4 left-4 right-4 z-10 lg:bottom-4 lg:left-auto lg:right-4 lg:top-4 lg:w-[264px]">
           <SceneInspector
             sceneId={sceneId ?? ""}
+            connectionRef={connectionRef}
             activeObject={activeObject}
             setSceneObjects={setSceneObjects}
-            setActiveObjectId={setActiveObjectId}
           />
         </aside>
 
         <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
           <AddObjectBar
             sceneId={sceneId ?? ""}
-            setSceneObjects={setSceneObjects}
+            connectionRef={connectionRef}
             sceneObjects={sceneObjects}
             setActiveObjectId={setActiveObjectId}
           />

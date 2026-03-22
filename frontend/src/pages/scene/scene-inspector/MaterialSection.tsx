@@ -1,16 +1,19 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { updateSceneObject } from '../../../api/sceneObjects';
+import type { HubConnection } from '@microsoft/signalr';
 import type { SceneObjectDto, UpdateSceneObjectDto } from '../../../types/scenes';
 import InspectorSection from './InspectorSection';
+import type { MutableRefObject } from 'react';
 
 interface MaterialSectionProps {
   sceneId: string;
+  connectionRef: MutableRefObject<HubConnection | null>;
   activeObject: SceneObjectDto;
   setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
 }
 
 async function updateMaterialField(
   sceneId: string,
+  connectionRef: MutableRefObject<HubConnection | null>,
   activeObject: SceneObjectDto,
   setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>,
   field: 'color' | 'opacity',
@@ -43,16 +46,11 @@ async function updateMaterialField(
   );
 
   try {
-    const persistedObject = await updateSceneObject(
+    await connectionRef.current?.invoke(
+      'UpdateObject',
       sceneId,
       activeObject.id,
       updatePayload,
-    );
-
-    setSceneObjects((objects) =>
-      objects.map((object) =>
-        object.id === persistedObject.id ? persistedObject : object,
-      ),
     );
   } catch (error) {
     console.error('Failed to persist object material', error);
@@ -61,6 +59,7 @@ async function updateMaterialField(
 
 function MaterialSection({
   sceneId,
+  connectionRef,
   activeObject,
   setSceneObjects,
 }: MaterialSectionProps) {
@@ -78,6 +77,7 @@ function MaterialSection({
               onChange={(event) =>
                 void updateMaterialField(
                   sceneId,
+                  connectionRef,
                   activeObject,
                   setSceneObjects,
                   'color',
@@ -110,6 +110,7 @@ function MaterialSection({
             onChange={(event) =>
               void updateMaterialField(
                 sceneId,
+                connectionRef,
                 activeObject,
                 setSceneObjects,
                 'opacity',

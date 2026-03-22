@@ -1,21 +1,21 @@
-import type { Dispatch, SetStateAction } from "react";
+import type { HubConnection } from "@microsoft/signalr";
+import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type { SceneObjectDto } from "../../../types/scenes";
 import MaterialSection from "./MaterialSection";
 import TransformSection from "./TransformSection";
-import { deleteSceneObject } from "../../../api/sceneObjects";
 
 interface SceneInspectorProps {
   sceneId: string;
+  connectionRef: MutableRefObject<HubConnection | null>;
   activeObject: SceneObjectDto | null;
   setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
-  setActiveObjectId: Dispatch<SetStateAction<string | null>>;
 }
 
 function SceneInspector({
   sceneId,
+  connectionRef,
   activeObject,
   setSceneObjects,
-  setActiveObjectId,
 }: SceneInspectorProps) {
 
   if (!activeObject) {
@@ -34,12 +34,7 @@ function SceneInspector({
 
   const deleteObject = async () => {
     try {
-      await deleteSceneObject(sceneId, activeObject.id);
-
-      setSceneObjects((objects) =>
-        objects.filter((object) => object.id !== activeObject.id),
-      );
-      setActiveObjectId(null);
+      await connectionRef.current?.invoke("DeleteObject", sceneId, activeObject.id);
     } catch (error) {
       console.error("failed to delete object", error);
     }
@@ -63,6 +58,7 @@ function SceneInspector({
 
       <MaterialSection
         sceneId={sceneId}
+        connectionRef={connectionRef}
         activeObject={activeObject}
         setSceneObjects={setSceneObjects}
       />
