@@ -26,8 +26,8 @@ public class ScenesController : ControllerBase
         {
             Id = Guid.NewGuid(),
             Name = string.IsNullOrWhiteSpace(dto.Name) ? "Untitled Scene" : dto.Name,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
+            CreatedAt = now,
+            UpdatedAt = now,
             Objects = new List<SceneObject>
             {
                 CreateStarterCube(now)
@@ -37,113 +37,28 @@ public class ScenesController : ControllerBase
         _db.Scenes.Add(scene);
         await _db.SaveChangesAsync();
 
-        var response = SceneToDTO(scene);
-        return CreatedAtAction(nameof(GetSceneById), new { id = scene.Id }, response);
-    }
-
-    [HttpPost("{sceneId:guid}/objects")]
-    public async Task<ActionResult<SceneObjectDto>> CreateSceneObject(Guid sceneId, CreateSceneObjectDto objectDto)
-    {
-        var sceneExists = await _db.Scenes.AnyAsync(s => s.Id == sceneId);
-
-        if (!sceneExists)
-        {
-            return NotFound();
-        }
-
-        var sceneObject = new SceneObject
-        {
-            Id = Guid.NewGuid(),
-            SceneId = sceneId,
-            Type = objectDto.Type,
-            Name = string.IsNullOrWhiteSpace(objectDto.Name) ? objectDto.Type : objectDto.Name,
-
-            PositionX = objectDto.PositionX,
-            PositionY = objectDto.PositionY,
-            PositionZ = objectDto.PositionZ,
-
-            RotationX = objectDto.RotationX,
-            RotationY = objectDto.RotationY,
-            RotationZ = objectDto.RotationZ,
-
-            ScaleX = objectDto.ScaleX,
-            ScaleY = objectDto.ScaleY,
-            ScaleZ = objectDto.ScaleZ,
-
-            Color = string.IsNullOrWhiteSpace(objectDto.Color) ? "#ffffff" : objectDto.Color,
-            Opacity = objectDto.Opacity,
-            CreatedBy = "system",
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        _db.SceneObjects.Add(sceneObject);
-        await _db.SaveChangesAsync();
-
-        return Ok(SceneObjectToDto(sceneObject));
-    }
-
-    [HttpPut("{sceneId:guid}")]
-    public async Task<ActionResult<SceneDto>> updateScene(Guid sceneId, [FromBody] UpdateSceneDto dto)
-    {
-        var scene = await _db.Scenes.FirstOrDefaultAsync(s => s.Id == sceneId);
-
-        if (scene == null)
-        {
-            return NotFound();
-        }
-
-        scene.Name = dto.Name;
-        scene.UpdatedAt = DateTime.UtcNow;
-
-        await _db.SaveChangesAsync();
-        return Ok(SceneToDTO(scene));
-    }
-
-    [HttpPut("{sceneId:guid}/objects/{objectId:guid}")]
-    public async Task<ActionResult<SceneObjectDto>> UpdateSceneObject(Guid sceneId, Guid objectId, [FromBody] UpdateSceneObjectDto dto)
-    {
-        var sceneObject = await _db.SceneObjects.FirstOrDefaultAsync(o => o.Id == objectId && o.SceneId == sceneId);
-
-        if (sceneObject == null)
-        {
-            return NotFound();
-        }
-
-        sceneObject.Type = dto.Type;
-        sceneObject.Name = string.IsNullOrWhiteSpace(dto.Name) ? dto.Type : dto.Name;
-
-        sceneObject.PositionX = dto.PositionX;
-        sceneObject.PositionY = dto.PositionY;
-        sceneObject.PositionZ = dto.PositionZ;
-
-        sceneObject.RotationX = dto.RotationX;
-        sceneObject.RotationY = dto.RotationY;
-        sceneObject.RotationZ = dto.RotationZ;
-
-        sceneObject.ScaleX = dto.ScaleX;
-        sceneObject.ScaleY = dto.ScaleY;
-        sceneObject.ScaleZ = dto.ScaleZ;
-
-        sceneObject.Color = string.IsNullOrWhiteSpace(dto.Color) ? "#ffffff" : dto.Color;
-        sceneObject.Opacity = dto.Opacity;
-
-        sceneObject.UpdatedAt = DateTime.UtcNow;
-
-        await _db.SaveChangesAsync();
-
-        return Ok(SceneObjectToDto(sceneObject));
+        return CreatedAtAction(nameof(GetSceneById), new { id = scene.Id }, SceneToDto(scene));
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<SceneDto>>> GetScenes()
     {
-        return await _db.Scenes.AsNoTracking().OrderByDescending(s => s.UpdatedAt).Select(x => SceneToDTO(x)).ToListAsync();
+        var scenes = await _db.Scenes
+            .AsNoTracking()
+            .OrderByDescending(s => s.UpdatedAt)
+            .Select(s => SceneToDto(s))
+            .ToListAsync();
+
+        return Ok(scenes);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<SceneDto>> GetSceneById(Guid id)
+    public async Task<ActionResult<SceneDetailsDto>> GetSceneById(Guid id)
     {
-        var scene = await _db.Scenes.AsNoTracking().Include(s => s.Objects).FirstOrDefaultAsync(s => s.Id == id);
+        var scene = await _db.Scenes
+            .AsNoTracking()
+            .Include(s => s.Objects)
+            .FirstOrDefaultAsync(s => s.Id == id);
 
         if (scene == null)
         {
@@ -159,8 +74,29 @@ public class ScenesController : ControllerBase
             Objects = scene.Objects.Select(SceneObjectToDto).ToList()
         };
 
-
         return Ok(response);
+    }
+
+    [HttpPut("{sceneId:guid}")]
+    public async Task<ActionResult<SceneDto>> UpdateScene(Guid sceneId, [FromBody] UpdateSceneDto dto)
+    {
+        var scene = await _db.Scenes.FirstOrDefaultAsync(s => s.Id == sceneId);
+
+        if (scene == null)
+        {
+            return NotFound();
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.Name))
+        {
+            scene.Name = dto.Name;
+        }
+
+        scene.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+
+        return Ok(SceneToDto(scene));
     }
 
     [HttpDelete("{id:guid}")]
@@ -179,23 +115,7 @@ public class ScenesController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{sceneId:guid}/objects/{objectId:guid}")]
-    public async Task<IActionResult> DeleteSceneObject(Guid sceneId, Guid objectId)
-    {
-        var sceneObject = await _db.SceneObjects.FirstOrDefaultAsync(o => o.Id == objectId && o.SceneId == sceneId);
-
-        if (sceneObject == null)
-        {
-            return NotFound();
-        }
-
-        _db.SceneObjects.Remove(sceneObject);
-        await _db.SaveChangesAsync();
-
-        return NoContent();
-    }
-
-    private static SceneDto SceneToDTO(Scene scene) => new SceneDto
+    private static SceneDto SceneToDto(Scene scene) => new SceneDto
     {
         Id = scene.Id,
         Name = scene.Name,
@@ -231,22 +151,17 @@ public class ScenesController : ControllerBase
             Id = Guid.NewGuid(),
             Type = "Cube",
             Name = "Cube",
-
             PositionX = 0f,
             PositionY = 0.7f,
             PositionZ = 0f,
-
             RotationX = 0f,
             RotationY = 0f,
             RotationZ = 0f,
-
             ScaleX = 1f,
             ScaleY = 1f,
             ScaleZ = 1f,
-
             Color = "#fb923c",
             Opacity = 1f,
-
             CreatedBy = "system",
             UpdatedAt = now
         };
