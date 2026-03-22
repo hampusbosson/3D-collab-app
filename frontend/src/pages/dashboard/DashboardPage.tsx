@@ -14,6 +14,7 @@ import SceneCard from "./SceneCard";
 function DashboardPage() {
   const navigate = useNavigate();
   const [scenes, setScenes] = useState<SceneDto[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [scenePendingDelete, setScenePendingDelete] = useState<SceneDto | null>(
     null,
   );
@@ -73,6 +74,11 @@ function DashboardPage() {
     }
   };
 
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const filteredScenes = scenes.filter((scene) =>
+    scene.name.toLowerCase().includes(normalizedSearchQuery),
+  );
+
   return (
     <div className="min-h-screen bg-[var(--bg-app)] text-[color:var(--text-primary)]">
       <div className="flex min-h-screen flex-col lg:flex-row">
@@ -92,7 +98,7 @@ function DashboardPage() {
               </div>
 
               <nav className="space-y-2">
-                <div className="rounded-2xl bg-[var(--surface-strong)] px-4 py-3 text-sm font-medium text-[color:var(--text-inverse)] shadow-[var(--shadow-soft)]">
+                <div className="rounded-2xl bg-[var(--surface-strong)] px-4 py-3 text-sm font-medium text-[color:var(--text-on-strong)] shadow-[var(--shadow-soft)]">
                   Dashboard
                 </div>
               </nav>
@@ -108,6 +114,8 @@ function DashboardPage() {
                 <input
                   type="search"
                   placeholder="Search scenes"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
                   className="w-full border-none bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)]"
                 />
               </label>
@@ -122,9 +130,6 @@ function DashboardPage() {
                   Create scene
                 </button>
                 <ThemeToggle />
-                <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-elevated)] text-sm font-semibold text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]">
-                  H
-                </div>
               </div>
             </header>
 
@@ -144,19 +149,40 @@ function DashboardPage() {
                 </div>
                 <div className="flex gap-3">
                   <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-[var(--surface-elevated)] px-4 py-3 text-sm text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]">
-                    {scenes.length} active scenes
+                    {filteredScenes.length} active scenes
                   </div>
                 </div>
               </div>
 
               <div className="mt-8 grid gap-6 xl:grid-cols-2 2xl:grid-cols-3">
-                {scenes.map((scene) => (
-                  <SceneCard
-                    key={scene.id}
-                    scene={scene}
-                    onDeleteClick={handleOpenDeleteModal}
-                  />
-                ))}
+                {scenes.length === 0 ? (
+                  <div className="rounded-[28px] border border-dashed border-[color:var(--border-strong)] bg-[var(--surface-elevated)] px-6 py-12 text-center shadow-[var(--shadow-soft)] xl:col-span-2 2xl:col-span-3">
+                    <p className="text-base font-semibold text-[color:var(--text-primary)]">
+                      No scenes yet
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+                      Create your first scene to start building and collaborating
+                      in 3D.
+                    </p>
+                  </div>
+                ) : filteredScenes.length === 0 ? (
+                  <div className="rounded-[28px] border border-dashed border-[color:var(--border-strong)] bg-[var(--surface-elevated)] px-6 py-12 text-center shadow-[var(--shadow-soft)] xl:col-span-2 2xl:col-span-3">
+                    <p className="text-base font-semibold text-[color:var(--text-primary)]">
+                      No matching scenes
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+                      Try a different name or clear the search to see all scenes.
+                    </p>
+                  </div>
+                ) : (
+                  filteredScenes.map((scene) => (
+                    <SceneCard
+                      key={scene.id}
+                      scene={scene}
+                      onDeleteClick={handleOpenDeleteModal}
+                    />
+                  ))
+                )}
               </div>
             </section>
           </div>

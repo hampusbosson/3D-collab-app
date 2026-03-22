@@ -7,6 +7,22 @@ interface SceneCardProps {
   onDeleteClick: (scene: SceneDto) => void;
 }
 
+function formatSceneUpdatedAt(updatedAt: string) {
+  const parsedDate = new Date(updatedAt);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return updatedAt;
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(parsedDate);
+}
+
 function SceneCard({ scene, onDeleteClick }: SceneCardProps) {
   return (
     <div className="group relative rounded-[32px] border border-[color:var(--border-subtle)] bg-[var(--surface-elevated)] p-4 shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-1 hover:border-[color:var(--border-strong)]">
@@ -25,7 +41,9 @@ function SceneCard({ scene, onDeleteClick }: SceneCardProps) {
             <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[color:var(--text-primary)]">
               {scene.name}
             </h3>
-            <p className="mt-2 text-sm text-[color:var(--text-secondary)]">{scene.updatedAt}</p>
+            <p className="mt-2 text-sm text-[color:var(--text-secondary)]">
+              Updated {formatSceneUpdatedAt(scene.updatedAt)}
+            </p>
           </div>
         </div>
 
