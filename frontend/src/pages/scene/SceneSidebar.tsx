@@ -6,7 +6,7 @@ import {
   type SetStateAction,
 } from 'react';
 import { Link } from 'react-router-dom';
-import type { SceneDetailsDto, SceneObjectDto } from '../../types/scenes';
+import type { LiveSelection, SceneDetailsDto, SceneObjectDto } from '../../types/scenes';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -18,6 +18,7 @@ import {
   PyramidIcon,
   SphereIcon,
 } from '../../components/icons/SceneIcons';
+import { getUserColor, getUserInitial } from '../../utils/presence';
 
 interface SceneSidebarProps {
   scene: SceneDetailsDto | null;
@@ -27,6 +28,8 @@ interface SceneSidebarProps {
   onToggleCollapse: () => void;
   onSceneNameCommit: (nextName: string) => void | Promise<void>;
   activeObjectId: string | null;
+  currentUserName: string;
+  liveSelections: LiveSelection[];
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
 }
 
@@ -75,16 +78,6 @@ function HeaderButton({
   );
 }
 
-function getUserColor(name: string) {
-  const palette = ['#fb923c', '#38bdf8', '#a78bfa', '#34d399', '#f472b6', '#f59e0b'];
-  const hash = Array.from(name).reduce((total, character) => total + character.charCodeAt(0), 0);
-  return palette[hash % palette.length];
-}
-
-function getUserInitial(name: string) {
-  return name.trim().slice(0, 1).toUpperCase() || '?';
-}
-
 function SceneSidebar({
   scene,
   users,
@@ -93,10 +86,11 @@ function SceneSidebar({
   onToggleCollapse,
   onSceneNameCommit,
   activeObjectId,
+  currentUserName,
+  liveSelections,
   setActiveObjectId,
 }: SceneSidebarProps) {
   const [draftSceneName, setDraftSceneName] = useState(scene?.name ?? '');
-  const currentUserName = sessionStorage.getItem('sceneUserName');
   const sortedUsers = [...users].sort((leftUser, rightUser) => {
     if (leftUser === currentUserName) {
       return -1;
@@ -108,6 +102,10 @@ function SceneSidebar({
 
     return 0;
   });
+  const objectNameById = new Map(elements.map((element) => [element.id, element.name]));
+  const selectedObjectIdByUser = new Map(
+    liveSelections.map((selection) => [selection.userName, selection.objectId]),
+  );
 
   useEffect(() => {
     setDraftSceneName(scene?.name ?? '');
@@ -207,6 +205,9 @@ function SceneSidebar({
                   <p className="truncate text-[0.74rem] font-medium text-[color:var(--text-primary)]">
                     {user}
                   </p>
+                  <p className="truncate text-[0.64rem] text-[color:var(--text-muted)]">
+                    {objectNameById.get(selectedObjectIdByUser.get(user) ?? '') ?? 'Browsing scene'}
+                  </p>
                 </div>
                 {isCurrentUser ? (
                   <span className="rounded-full bg-[rgba(251,146,60,0.14)] px-1.5 py-0.5 text-[0.58rem] font-medium uppercase tracking-[0.1em] text-[color:var(--accent-primary)]">
@@ -254,7 +255,11 @@ function SceneSidebar({
 
         <div className="space-y-0.5">
           {elements.map((element) => {
-            const isActive = element.id === activeObjectId
+            const isActive = element.id === activeObjectId;
+            const selectingUsers = liveSelections.filter(
+              (selection) =>
+                selection.objectId === element.id && selection.userName !== currentUserName,
+            );
 
             return (
               <button
@@ -266,13 +271,27 @@ function SceneSidebar({
                     ? 'bg-[rgba(251,146,60,0.14)] text-[color:var(--text-primary)]'
                     : 'text-[color:var(--text-secondary)] hover:bg-[var(--surface-muted)]'
                 }`}
-              >
-                <div className="text-[color:var(--text-muted)]">
-                  <ObjectIcon type={element.type} />
-                </div>
-                <span className="min-w-0 flex-1 truncate text-[0.78rem] font-medium">
-                  {element.name}
-                </span>
+                >
+                  <div className="text-[color:var(--text-muted)]">
+                    <ObjectIcon type={element.type} />
+                  </div>
+                  <span className="min-w-0 flex-1 truncate text-[0.78rem] font-medium">
+                    {element.name}
+                  </span>
+                  {selectingUsers.length > 0 ? (
+                    <div className="flex -space-x-1">
+                      {selectingUsers.slice(0, 3).map((selection) => (
+                        <div
+                          key={`${element.id}-${selection.userName}`}
+                          title={`${selection.userName} is selecting ${element.name}`}
+                          className="flex h-5 w-5 items-center justify-center rounded-full border border-[var(--surface-sidebar)] text-[0.54rem] font-semibold text-white"
+                          style={{ backgroundColor: getUserColor(selection.userName) }}
+                        >
+                          {getUserInitial(selection.userName)}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 {isActive ? (
                   <div className="h-1.5 w-1.5 rounded-full bg-[color:var(--text-secondary)]" />
                 ) : null}

@@ -1,9 +1,10 @@
-import { Grid, OrbitControls, TransformControls } from "@react-three/drei";
+import { Grid, Html, OrbitControls, TransformControls } from "@react-three/drei";
 import { Canvas, type MeshProps, type ThreeEvent, useThree } from "@react-three/fiber";
 import type { HubConnection } from "@microsoft/signalr";
 import { useEffect, useState, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import { DoubleSide, Group } from "three";
-import type { SceneObjectDto, UpdateSceneObjectDto } from "../../types/scenes";
+import type { LiveSelection, SceneObjectDto, UpdateSceneObjectDto } from "../../types/scenes";
+import { getUserColor, getUserInitial } from "../../utils/presence";
 
 const transformModes = ["translate", "rotate", "scale"] as const;
 type TransformMode = (typeof transformModes)[number];
@@ -158,30 +159,73 @@ function ObjectMesh({
 interface RenderObjectProps {
   object: SceneObjectDto;
   activeObjectId: string | null;
+  currentUserName: string;
+  liveSelections: LiveSelection[];
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
   onCycleTransformMode: () => void;
+}
+
+function SelectionBadge({ selections }: { selections: LiveSelection[] }) {
+  if (selections.length === 0) {
+    return null;
+  }
+
+  return (
+    <Html position={[0, 1.5, 0]} center distanceFactor={9} style={{ pointerEvents: "none" }}>
+      <div className="rounded-full border border-[rgba(255,255,255,0.2)] bg-[rgba(15,23,42,0.85)] px-2 py-1 shadow-[0_12px_30px_rgba(15,23,42,0.28)] backdrop-blur">
+        <div className="flex items-center gap-1">
+          {selections.slice(0, 2).map((selection) => (
+            <div
+              key={`${selection.objectId}-${selection.userName}`}
+              title={`${selection.userName} is selecting this object`}
+              className="flex h-6 w-6 items-center justify-center rounded-full text-[0.58rem] font-semibold text-white"
+              style={{ backgroundColor: getUserColor(selection.userName) }}
+            >
+              {getUserInitial(selection.userName)}
+            </div>
+          ))}
+          <span className="whitespace-nowrap pl-1 text-[0.64rem] font-medium text-white">
+            {selections[0].userName}
+            {selections.length > 1 ? ` +${selections.length - 1}` : ""}
+          </span>
+        </div>
+      </div>
+    </Html>
+  );
 }
 
 function RenderObject({
   object,
   activeObjectId,
+  currentUserName,
+  liveSelections,
   setActiveObjectId,
   onCycleTransformMode,
 }: RenderObjectProps) {
+  const collaboratorSelections = liveSelections.filter(
+    (selection) =>
+      selection.objectId === object.id && selection.userName !== currentUserName,
+  );
+
   return (
-    <group
-      name={object.id}
-      position={getPosition(object)}
-      rotation={getRotation(object)}
-      scale={getScale(object)}
-    >
-      <ObjectMesh
-        object={object}
-        isActive={object.id === activeObjectId}
-        setActiveObjectId={setActiveObjectId}
-        onCycleTransformMode={onCycleTransformMode}
-      />
-    </group>
+    <>
+      <group position={getPosition(object)}>
+        <SelectionBadge selections={collaboratorSelections} />
+      </group>
+      <group
+        name={object.id}
+        position={getPosition(object)}
+        rotation={getRotation(object)}
+        scale={getScale(object)}
+      >
+        <ObjectMesh
+          object={object}
+          isActive={object.id === activeObjectId}
+          setActiveObjectId={setActiveObjectId}
+          onCycleTransformMode={onCycleTransformMode}
+        />
+      </group>
+    </>
   );
 }
 
@@ -268,6 +312,8 @@ interface SceneCanvasProps {
   isDark: boolean;
   connectionRef: MutableRefObject<HubConnection | null>;
   sceneObjects: SceneObjectDto[];
+  currentUserName: string;
+  liveSelections: LiveSelection[];
   activeObjectId: string | null;
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
   setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
@@ -278,6 +324,8 @@ export function SceneCanvas({
   isDark,
   connectionRef,
   sceneObjects,
+  currentUserName,
+  liveSelections,
   activeObjectId,
   setActiveObjectId,
   setSceneObjects,
@@ -354,6 +402,8 @@ export function SceneCanvas({
           key={object.id}
           object={object}
           activeObjectId={activeObjectId}
+          currentUserName={currentUserName}
+          liveSelections={liveSelections}
           setActiveObjectId={setActiveObjectId}
           onCycleTransformMode={cycleTransformMode}
         />

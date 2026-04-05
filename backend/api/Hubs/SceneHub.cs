@@ -24,9 +24,8 @@ public class SceneHub : Hub
 
         _presenceTracker.AddUser(sceneId, Context.ConnectionId, userName);
 
-        var users = _presenceTracker.GetUsers(sceneId);
-
-        await Clients.Groups(sceneId).SendAsync("PresenceUpdated", users);
+        await BroadcastPresence(sceneId);
+        await BroadcastSelections(sceneId);
     }
 
     public async Task LeaveScene(string sceneId)
@@ -37,8 +36,8 @@ public class SceneHub : Hub
 
         if (removed != null)
         {
-            var users = _presenceTracker.GetUsers(sceneId);
-            await Clients.Group(sceneId).SendAsync("PresenceUpdated", users);
+            await BroadcastPresence(sceneId);
+            await BroadcastSelections(sceneId);
         }
     }
 
@@ -49,11 +48,34 @@ public class SceneHub : Hub
         if (removed is { } result)
         {
             var (sceneId, _) = result;
-            var users = _presenceTracker.GetUsers(sceneId);
-            await Clients.Group(sceneId).SendAsync("PresenceUpdated", users);
+            await BroadcastPresence(sceneId);
+            await BroadcastSelections(sceneId);
         }
 
         await base.OnDisconnectedAsync(exception);
+    }
+
+    public async Task UpdateSelection(string sceneId, string? objectId)
+    {
+        if (!Guid.TryParse(sceneId, out _))
+        {
+            return;
+        }
+
+        string? normalizedObjectId = null;
+
+        if (!string.IsNullOrWhiteSpace(objectId))
+        {
+            if (!Guid.TryParse(objectId, out var objectGuid))
+            {
+                return;
+            }
+
+            normalizedObjectId = objectGuid.ToString();
+        }
+
+        _presenceTracker.UpdateSelection(sceneId, Context.ConnectionId, normalizedObjectId);
+        await BroadcastSelections(sceneId);
     }
 
     public async Task UpdateObject(string sceneId, string objectId, UpdateSceneObjectDto dto)
@@ -181,7 +203,21 @@ public class SceneHub : Hub
         _db.SceneObjects.Remove(sceneObject);
         await _db.SaveChangesAsync();
 
+        _presenceTracker.ClearSelectionsForObject(sceneId, objectId);
         await Clients.Group(sceneId).SendAsync("ObjectDeleted", objectId);
+        await BroadcastSelections(sceneId);
+    }
+
+    private Task BroadcastPresence(string sceneId)
+    {
+        var users = _presenceTracker.GetUsers(sceneId);
+        return Clients.Group(sceneId).SendAsync("PresenceUpdated", users);
+    }
+
+    private Task BroadcastSelections(string sceneId)
+    {
+        var selections = _presenceTracker.GetSelections(sceneId);
+        return Clients.Group(sceneId).SendAsync("SelectionUpdated", selections);
     }
 
     private static SceneObjectDto SceneObjectToDto(SceneObject obj) => new SceneObjectDto

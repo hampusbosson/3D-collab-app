@@ -41,6 +41,11 @@ export type SceneUser = {
   isCurrentUser?: boolean;
 };
 
+export type LiveSelection = {
+  userName: string;
+  objectId: string;
+};
+
 export type SceneObjectDto = {
   id: string;
   sceneId: string;

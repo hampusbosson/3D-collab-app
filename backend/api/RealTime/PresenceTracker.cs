@@ -1,10 +1,18 @@
+using api.Dtos;
+
 namespace api.RealTime;
 
 public class PresenceTracker
 {
     // maps: sceneId -> (ConnectionId -> userName)
-    private readonly Dictionary<string, Dictionary<string, string>> _sceneUsers = new();
-    private readonly Lock _lock = new();
+    private readonly Dictionary<string, Dictionary<string, PresenceEntry>> _sceneUsers = new();
+    private readonly object _lock = new();
+
+    private sealed class PresenceEntry
+    {
+        public string UserName { get; set; } = "";
+        public string? SelectedObjectId { get; set; }
+    }
 
     public void AddUser(string sceneId, string connectionId, string userName)
     {
@@ -12,10 +20,13 @@ public class PresenceTracker
         {
             if (!_sceneUsers.ContainsKey(sceneId))
             {
-                _sceneUsers[sceneId] = new Dictionary<string, string>();
+                _sceneUsers[sceneId] = new Dictionary<string, PresenceEntry>();
             }
 
-            _sceneUsers[sceneId][connectionId] = userName;
+            _sceneUsers[sceneId][connectionId] = new PresenceEntry
+            {
+                UserName = userName
+            };
         }
     }
 
@@ -28,7 +39,70 @@ public class PresenceTracker
                 return new List<string>();
             }
 
-            return users.Values.Distinct().OrderBy(name => name).ToList();
+            return users.Values
+                .Select(entry => entry.UserName)
+                .Distinct()
+                .OrderBy(name => name)
+                .ToList();
+        }
+    }
+
+    public void UpdateSelection(string sceneId, string connectionId, string? objectId)
+    {
+        lock (_lock)
+        {
+            if (!_sceneUsers.TryGetValue(sceneId, out var users) ||
+                !users.TryGetValue(connectionId, out var entry))
+            {
+                return;
+            }
+
+            entry.SelectedObjectId = objectId;
+        }
+    }
+
+    public List<SceneSelectionDto> GetSelections(string sceneId)
+    {
+        lock (_lock)
+        {
+            if (!_sceneUsers.TryGetValue(sceneId, out var users))
+            {
+                return new List<SceneSelectionDto>();
+            }
+
+            return users.Values
+                .Where(entry => !string.IsNullOrWhiteSpace(entry.SelectedObjectId))
+                .OrderBy(entry => entry.UserName)
+                .Select(entry => new SceneSelectionDto
+                {
+                    UserName = entry.UserName,
+                    ObjectId = entry.SelectedObjectId!
+                })
+                .ToList();
+        }
+    }
+
+    public bool ClearSelectionsForObject(string sceneId, string objectId)
+    {
+        lock (_lock)
+        {
+            if (!_sceneUsers.TryGetValue(sceneId, out var users))
+            {
+                return false;
+            }
+
+            var clearedSelection = false;
+
+            foreach (var entry in users.Values)
+            {
+                if (entry.SelectedObjectId == objectId)
+                {
+                    entry.SelectedObjectId = null;
+                    clearedSelection = true;
+                }
+            }
+
+            return clearedSelection;
         }
     }
 
@@ -43,7 +117,7 @@ public class PresenceTracker
                 var sceneId = sceneEntry.Key;
                 var users = sceneEntry.Value;
 
-                if (users.TryGetValue(connectionId, out var userName))
+                if (users.TryGetValue(connectionId, out var entry))
                 {
                     users.Remove(connectionId);
 
@@ -57,7 +131,7 @@ public class PresenceTracker
                         _sceneUsers.Remove(emptySceneId);
                     }
 
-                    return (sceneId, userName);
+                    return (sceneId, entry.UserName);
                 }
             }
 

@@ -8,7 +8,7 @@ import SceneOnboardingModal from "./SceneOnboardingModal";
 import SceneInspector from "./scene-inspector/SceneInspector";
 import SceneSidebar from "./SceneSidebar";
 import { getSceneById, updateScene } from "../../api/scenes";
-import { SceneDetailsDto, SceneObjectDto } from "../../types/scenes";
+import { LiveSelection, SceneDetailsDto, SceneObjectDto } from "../../types/scenes";
 import * as signalR from "@microsoft/signalr";
 import { signalRHubUrl } from "../../utils/env";
 
@@ -24,11 +24,28 @@ function ScenePage() {
   const [dontShowOnboardingAgain, setDontShowOnboardingAgain] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
+  const [currentUserName] = useState(() => {
+    const existingUserName = sessionStorage.getItem("sceneUserName");
+
+    if (existingUserName) {
+      return existingUserName;
+    }
+
+    const generatedUserName = `Guest-${Math.floor(Math.random() * 1000)}`;
+    sessionStorage.setItem("sceneUserName", generatedUserName);
+    return generatedUserName;
+  });
   const activeObject =
     sceneObjects.find((object) => object.id === activeObjectId) ?? null;
 
   const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
+  const [liveSelections, setLiveSelections] = useState<LiveSelection[]>([]);
   const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const activeObjectIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    activeObjectIdRef.current = activeObjectId;
+  }, [activeObjectId]);
 
   const fetchScene = async () => {
     if (!sceneId) return;
@@ -58,12 +75,6 @@ function ScenePage() {
   useEffect(() => {
     if (!sceneId) return;
 
-    const userName =
-      sessionStorage.getItem("sceneUserName") ??
-      `Guest-${Math.floor(Math.random() * 1000)}`;
-
-    sessionStorage.setItem("sceneUserName", userName);
-
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(signalRHubUrl)
       .withAutomaticReconnect()
@@ -77,6 +88,12 @@ function ScenePage() {
     connection.on("PresenceUpdated", (users: string[]) => {
       if (isMounted) {
         setConnectedUsers(users);
+      }
+    });
+
+    connection.on("SelectionUpdated", (selections: LiveSelection[]) => {
+      if (isMounted) {
+        setLiveSelections(selections);
       }
     });
 
@@ -109,13 +126,27 @@ function ScenePage() {
 
         if (!isMounted) return;
 
-        await connection.invoke("JoinScene", sceneId, userName);
+        await connection.invoke("JoinScene", sceneId, currentUserName);
+        await connection.invoke("UpdateSelection", sceneId, activeObjectIdRef.current);
       } catch (error) {
         if (isMounted) {
           console.error("Failed to connect to scene hub", error);
         }
       }
     };
+
+    connection.onreconnected(() => {
+      void (async () => {
+        try {
+          await connection.invoke("JoinScene", sceneId, currentUserName);
+          await connection.invoke("UpdateSelection", sceneId, activeObjectIdRef.current);
+        } catch (error) {
+          if (isMounted) {
+            console.error("Failed to restore scene presence", error);
+          }
+        }
+      })();
+    });
 
     void startConnection();
 
@@ -127,7 +158,22 @@ function ScenePage() {
         connection.stop().catch(() => {});
       }
     };
-  }, [sceneId]);
+  }, [sceneId, currentUserName]);
+
+  useEffect(() => {
+    if (!sceneId) {
+      return;
+    }
+
+    const connection = connectionRef.current;
+    if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
+      return;
+    }
+
+    connection.invoke("UpdateSelection", sceneId, activeObjectId).catch((error) => {
+      console.error("Failed to sync active selection", error);
+    });
+  }, [activeObjectId, sceneId]);
 
   const handleSceneNameCommit = async (nextName: string) => {
     if (!sceneId || !scene) return;
@@ -186,6 +232,8 @@ function ScenePage() {
             isDark={isDark}
             connectionRef={connectionRef}
             sceneObjects={sceneObjects}
+            currentUserName={currentUserName}
+            liveSelections={liveSelections}
             activeObjectId={activeObjectId}
             setActiveObjectId={setActiveObjectId}
             setSceneObjects={setSceneObjects}
@@ -205,6 +253,8 @@ function ScenePage() {
             onToggleCollapse={() => setSidebarCollapsed((value) => !value)}
             onSceneNameCommit={handleSceneNameCommit}
             activeObjectId={activeObjectId}
+            currentUserName={currentUserName}
+            liveSelections={liveSelections}
             setActiveObjectId={setActiveObjectId}
           />
         </aside>
