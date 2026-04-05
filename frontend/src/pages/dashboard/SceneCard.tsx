@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowIcon, DeleteIcon } from '../../components/icons/DashboardIcons';
 import type { SceneDto } from '../../types/scenes';
+import PreviewThumbnail from './PreviewThumbnail';
 
 interface SceneCardProps {
   scene: SceneDto;
@@ -26,18 +27,10 @@ function formatSceneUpdatedAt(updatedAt: string) {
 function SceneCard({ scene, onDeleteClick }: SceneCardProps) {
   return (
     <div className="group relative rounded-[32px] border border-[color:var(--border-subtle)] bg-[var(--surface-elevated)] p-4 shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-1 hover:border-[color:var(--border-strong)]">
-      <button
-        type="button"
-        aria-label={`Delete ${scene.name}`}
-        onClick={() => onDeleteClick(scene)}
-        className="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-panel)] text-[color:var(--text-secondary)] opacity-0 shadow-[var(--shadow-soft)] transition hover:cursor-pointer hover:border-[color:var(--danger-solid,#d13d4f)] hover:bg-[rgba(209,61,79,0.12)] hover:text-[color:var(--danger-solid,#d13d4f)] group-hover:opacity-100"
-      >
-        <DeleteIcon />
-      </button>
-
       <Link to={`/scene/${scene.id}`} className="block">
-        <div className="mt-5 flex items-start gap-4 pr-14">
-          <div>
+        <PreviewThumbnail objects={scene.previewObjects} />
+        <div className="mt-5 flex items-start justify-between gap-4">
+          <div className="min-w-0">
             <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[color:var(--text-primary)]">
               {scene.name}
             </h3>
@@ -45,6 +38,18 @@ function SceneCard({ scene, onDeleteClick }: SceneCardProps) {
               Updated {formatSceneUpdatedAt(scene.updatedAt)}
             </p>
           </div>
+          <button
+            type="button"
+            aria-label={`Delete ${scene.name}`}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onDeleteClick(scene);
+            }}
+            className="mt-2 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-panel)] text-[color:var(--text-secondary)] opacity-0 shadow-[var(--shadow-soft)] transition hover:cursor-pointer hover:border-[color:var(--danger-solid,#d13d4f)] hover:bg-[rgba(209,61,79,0.12)] hover:text-[color:var(--danger-solid,#d13d4f)] group-hover:opacity-100"
+          >
+            <DeleteIcon />
+          </button>
         </div>
 
         <div className="mt-5 flex items-center justify-between border-t border-[color:var(--border-subtle)] pt-4">

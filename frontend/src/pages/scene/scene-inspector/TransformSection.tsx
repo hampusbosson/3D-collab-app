@@ -1,11 +1,10 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
-import type { VectorField } from '../../../types/scene';
+import { useEffect, useState } from 'react';
 import type { SceneObjectDto } from '../../../types/scenes';
 import InspectorSection from './InspectorSection';
 
 interface TransformSectionProps {
   activeObject: SceneObjectDto;
-  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
+  onCommitObject: (nextObject: SceneObjectDto) => void;
 }
 
 function NumberField({
@@ -72,43 +71,37 @@ function NumberField({
 }
 
 function updateVector(
-  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>,
-  activeObjectId: string,
-  field: VectorField,
+  activeObject: SceneObjectDto,
+  onCommitObject: (nextObject: SceneObjectDto) => void,
+  field: 'position' | 'rotation' | 'scale',
   axisIndex: number,
   nextValue: number,
 ) {
   const numericValue = Number.isFinite(nextValue) ? nextValue : 0;
 
-  setSceneObjects((objects) =>
-    objects.map((object) => {
-      if (object.id !== activeObjectId) {
-        return object;
-      }
+  if (field === 'position') {
+    const nextPositionFields = ['positionX', 'positionY', 'positionZ'] as const;
+    onCommitObject({
+      ...activeObject,
+      [nextPositionFields[axisIndex]]: numericValue,
+    });
+    return;
+  }
 
-      if (field === 'position') {
-        const nextPositionFields = ['positionX', 'positionY', 'positionZ'] as const;
-        return {
-          ...object,
-          [nextPositionFields[axisIndex]]: numericValue,
-        };
-      }
+  if (field === 'rotation') {
+    const nextRotationFields = ['rotationX', 'rotationY', 'rotationZ'] as const;
+    onCommitObject({
+      ...activeObject,
+      [nextRotationFields[axisIndex]]: numericValue,
+    });
+    return;
+  }
 
-      if (field === 'rotation') {
-        const nextRotationFields = ['rotationX', 'rotationY', 'rotationZ'] as const;
-        return {
-          ...object,
-          [nextRotationFields[axisIndex]]: numericValue,
-        };
-      }
-
-      const nextScaleFields = ['scaleX', 'scaleY', 'scaleZ'] as const;
-      return {
-        ...object,
-        [nextScaleFields[axisIndex]]: numericValue,
-      };
-    }),
-  );
+  const nextScaleFields = ['scaleX', 'scaleY', 'scaleZ'] as const;
+  onCommitObject({
+    ...activeObject,
+    [nextScaleFields[axisIndex]]: numericValue,
+  });
 }
 
 function VectorRow({
@@ -141,7 +134,7 @@ function VectorRow({
 
 function TransformSection({
   activeObject,
-  setSceneObjects,
+  onCommitObject,
 }: TransformSectionProps) {
   return (
     <InspectorSection title="Transform">
@@ -150,21 +143,21 @@ function TransformSection({
           label="Location"
           values={[activeObject.positionX, activeObject.positionY, activeObject.positionZ]}
           onChange={(index, value) =>
-            updateVector(setSceneObjects, activeObject.id, 'position', index, value)
+            updateVector(activeObject, onCommitObject, 'position', index, value)
           }
         />
         <VectorRow
           label="Rotation"
           values={[activeObject.rotationX, activeObject.rotationY, activeObject.rotationZ]}
           onChange={(index, value) =>
-            updateVector(setSceneObjects, activeObject.id, 'rotation', index, value)
+            updateVector(activeObject, onCommitObject, 'rotation', index, value)
           }
         />
         <VectorRow
           label="Scale"
           values={[activeObject.scaleX, activeObject.scaleY, activeObject.scaleZ]}
           onChange={(index, value) =>
-            updateVector(setSceneObjects, activeObject.id, 'scale', index, value)
+            updateVector(activeObject, onCommitObject, 'scale', index, value)
           }
         />
       </div>

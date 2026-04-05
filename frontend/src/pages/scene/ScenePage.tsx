@@ -8,11 +8,39 @@ import SceneOnboardingModal from "./SceneOnboardingModal";
 import SceneInspector from "./scene-inspector/SceneInspector";
 import SceneSidebar from "./SceneSidebar";
 import { getSceneById, updateScene } from "../../api/scenes";
+import type { PrimitiveType } from "../../types/scene";
 import { LiveSelection, SceneDetailsDto, SceneObjectDto } from "../../types/scenes";
 import * as signalR from "@microsoft/signalr";
 import { signalRHubUrl } from "../../utils/env";
+import {
+  areSceneObjectsEqual,
+  createSceneObject,
+  upsertSceneObject,
+} from "../../utils/sceneObjects";
 
 const sceneOnboardingPreferenceKey = "scene-onboarding-hidden";
+
+type SceneMutation =
+  | { type: "upsert"; object: SceneObjectDto }
+  | { type: "delete"; object: SceneObjectDto };
+
+type HistoryEntry = {
+  undo: SceneMutation;
+  redo: SceneMutation;
+  selectionAfterUndo: string | null;
+  selectionAfterRedo: string | null;
+};
+
+function applySceneMutationLocally(
+  objects: SceneObjectDto[],
+  mutation: SceneMutation,
+) {
+  if (mutation.type === "upsert") {
+    return upsertSceneObject(objects, mutation.object);
+  }
+
+  return objects.filter((object) => object.id !== mutation.object.id);
+}
 
 function ScenePage() {
   const { sceneId } = useParams();
@@ -40,6 +68,8 @@ function ScenePage() {
 
   const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
   const [liveSelections, setLiveSelections] = useState<LiveSelection[]>([]);
+  const [historyPast, setHistoryPast] = useState<HistoryEntry[]>([]);
+  const [historyFuture, setHistoryFuture] = useState<HistoryEntry[]>([]);
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const activeObjectIdRef = useRef<string | null>(null);
 
@@ -53,6 +83,9 @@ function ScenePage() {
       const scene = await getSceneById(sceneId);
       setScene(scene);
       setSceneObjects(scene.objects);
+      setHistoryPast([]);
+      setHistoryFuture([]);
+      setActiveObjectId(null);
     } catch (error) {
       console.error("Failed to fetch scene", error);
     }
@@ -99,15 +132,14 @@ function ScenePage() {
 
     connection.on("ObjectUpdated", (updatedObject: SceneObjectDto) => {
       setSceneObjects((currentObjects) =>
-        currentObjects.map((obj) =>
-          obj.id === updatedObject.id ? updatedObject : obj,
-        ),
+        upsertSceneObject(currentObjects, updatedObject),
       );
     });
 
     connection.on("ObjectAdded", (addedObject: SceneObjectDto) => {
-      setSceneObjects((currentObjects) => [...currentObjects, addedObject]);
-      setActiveObjectId(addedObject.id);
+      setSceneObjects((currentObjects) =>
+        upsertSceneObject(currentObjects, addedObject),
+      );
     });
 
     connection.on("ObjectDeleted", (objectId: string) => {
@@ -175,6 +207,182 @@ function ScenePage() {
     });
   }, [activeObjectId, sceneId]);
 
+  const applyMutation = (mutation: SceneMutation) => {
+    setSceneObjects((currentObjects) =>
+      applySceneMutationLocally(currentObjects, mutation),
+    );
+  };
+
+  const persistMutation = async (mutation: SceneMutation) => {
+    if (!sceneId) {
+      return;
+    }
+
+    try {
+      if (mutation.type === "upsert") {
+        await connectionRef.current?.invoke("UpsertObject", sceneId, mutation.object);
+        return;
+      }
+
+      await connectionRef.current?.invoke("DeleteObject", sceneId, mutation.object.id);
+    } catch (error) {
+      console.error("Failed to persist scene mutation", error);
+    }
+  };
+
+  const pushHistory = (entry: HistoryEntry) => {
+    setHistoryPast((currentHistory) => [...currentHistory.slice(-49), entry]);
+    setHistoryFuture([]);
+  };
+
+  const commitObjectChange = async (
+    previousObject: SceneObjectDto,
+    nextObject: SceneObjectDto,
+  ) => {
+    if (areSceneObjectsEqual(previousObject, nextObject)) {
+      return;
+    }
+
+    applyMutation({ type: "upsert", object: nextObject });
+    pushHistory({
+      undo: { type: "upsert", object: previousObject },
+      redo: { type: "upsert", object: nextObject },
+      selectionAfterUndo: previousObject.id,
+      selectionAfterRedo: nextObject.id,
+    });
+    setActiveObjectId(nextObject.id);
+    await persistMutation({ type: "upsert", object: nextObject });
+  };
+
+  const handlePreviewObject = (nextObject: SceneObjectDto) => {
+    applyMutation({ type: "upsert", object: nextObject });
+  };
+
+  const handleCommitObject = async (nextObject: SceneObjectDto) => {
+    const previousObject = sceneObjects.find((object) => object.id === nextObject.id);
+
+    if (!previousObject) {
+      return;
+    }
+
+    await commitObjectChange(previousObject, nextObject);
+  };
+
+  const handleCommitTransform = async (
+    previousObject: SceneObjectDto,
+    nextObject: SceneObjectDto,
+  ) => {
+    await commitObjectChange(previousObject, nextObject);
+  };
+
+  const handleAddObject = async (type: PrimitiveType) => {
+    if (!sceneId) {
+      return;
+    }
+
+    const newObject = createSceneObject(
+      sceneId,
+      type,
+      sceneObjects.length,
+      currentUserName,
+    );
+
+    applyMutation({ type: "upsert", object: newObject });
+    pushHistory({
+      undo: { type: "delete", object: newObject },
+      redo: { type: "upsert", object: newObject },
+      selectionAfterUndo: null,
+      selectionAfterRedo: newObject.id,
+    });
+    setActiveObjectId(newObject.id);
+    await persistMutation({ type: "upsert", object: newObject });
+  };
+
+  const handleDeleteObject = async (object: SceneObjectDto) => {
+    applyMutation({ type: "delete", object });
+    pushHistory({
+      undo: { type: "upsert", object },
+      redo: { type: "delete", object },
+      selectionAfterUndo: object.id,
+      selectionAfterRedo: null,
+    });
+    setActiveObjectId((currentActiveObjectId) =>
+      currentActiveObjectId === object.id ? null : currentActiveObjectId,
+    );
+    await persistMutation({ type: "delete", object });
+  };
+
+  const handleUndo = async () => {
+    const entry = historyPast[historyPast.length - 1];
+
+    if (!entry) {
+      return;
+    }
+
+    setHistoryPast((currentHistory) => currentHistory.slice(0, -1));
+    setHistoryFuture((currentHistory) => [entry, ...currentHistory]);
+    applyMutation(entry.undo);
+    setActiveObjectId(entry.selectionAfterUndo);
+    await persistMutation(entry.undo);
+  };
+
+  const handleRedo = async () => {
+    const entry = historyFuture[0];
+
+    if (!entry) {
+      return;
+    }
+
+    setHistoryFuture((currentHistory) => currentHistory.slice(1));
+    setHistoryPast((currentHistory) => [...currentHistory.slice(-49), entry]);
+    applyMutation(entry.redo);
+    setActiveObjectId(entry.selectionAfterRedo);
+    await persistMutation(entry.redo);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTypingTarget =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target?.isContentEditable;
+
+      if (isTypingTarget) {
+        return;
+      }
+
+      const isModifierPressed = event.metaKey || event.ctrlKey;
+
+      if (!isModifierPressed) {
+        return;
+      }
+
+      if (event.key.toLowerCase() === "z" && event.shiftKey) {
+        event.preventDefault();
+        void handleRedo();
+        return;
+      }
+
+      if (event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        void handleUndo();
+        return;
+      }
+
+      if (event.key.toLowerCase() === "y") {
+        event.preventDefault();
+        void handleRedo();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [historyPast, historyFuture, sceneObjects]);
+
   const handleSceneNameCommit = async (nextName: string) => {
     if (!sceneId || !scene) return;
 
@@ -228,15 +436,14 @@ function ScenePage() {
       <div className="relative min-h-screen">
         <div className="absolute inset-0">
           <SceneCanvas
-            sceneId={sceneId ?? ""}
             isDark={isDark}
-            connectionRef={connectionRef}
             sceneObjects={sceneObjects}
             currentUserName={currentUserName}
             liveSelections={liveSelections}
             activeObjectId={activeObjectId}
             setActiveObjectId={setActiveObjectId}
-            setSceneObjects={setSceneObjects}
+            onPreviewObject={handlePreviewObject}
+            onCommitObject={handleCommitTransform}
           />
         </div>
 
@@ -261,14 +468,33 @@ function ScenePage() {
 
         <aside className="absolute bottom-4 left-4 right-4 z-10 lg:bottom-4 lg:left-auto lg:right-4 lg:top-4 lg:w-[264px]">
           <SceneInspector
-            sceneId={sceneId ?? ""}
-            connectionRef={connectionRef}
             activeObject={activeObject}
-            setSceneObjects={setSceneObjects}
+            onCommitObject={handleCommitObject}
+            onDeleteObject={handleDeleteObject}
           />
         </aside>
 
-        <div className="absolute right-4 top-4 z-10 lg:right-72">
+        <div className="absolute right-4 top-4 z-10 flex items-center gap-2 lg:right-72">
+          <button
+            type="button"
+            aria-label="Undo last change"
+            onClick={() => void handleUndo()}
+            disabled={historyPast.length === 0}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] px-3 py-2 text-[0.72rem] font-medium text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)] backdrop-blur-xl transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <span>Undo</span>
+            <span className="text-[0.62rem] text-[color:var(--text-muted)]">Ctrl+Z</span>
+          </button>
+          <button
+            type="button"
+            aria-label="Redo last undone change"
+            onClick={() => void handleRedo()}
+            disabled={historyFuture.length === 0}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] px-3 py-2 text-[0.72rem] font-medium text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)] backdrop-blur-xl transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <span>Redo</span>
+            <span className="text-[0.62rem] text-[color:var(--text-muted)]">Ctrl+Y</span>
+          </button>
           <button
             type="button"
             aria-label="Open scene help"
@@ -280,11 +506,7 @@ function ScenePage() {
         </div>
 
         <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
-          <AddObjectBar
-            sceneId={sceneId ?? ""}
-            connectionRef={connectionRef}
-            sceneObjects={sceneObjects}
-          />
+          <AddObjectBar onAddObject={(type) => void handleAddObject(type)} />
         </div>
       </div>
 

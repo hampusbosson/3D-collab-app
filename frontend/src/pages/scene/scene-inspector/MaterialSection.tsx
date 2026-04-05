@@ -1,67 +1,14 @@
-import type { Dispatch, SetStateAction } from 'react';
-import type { HubConnection } from '@microsoft/signalr';
-import type { SceneObjectDto, UpdateSceneObjectDto } from '../../../types/scenes';
+import type { SceneObjectDto } from '../../../types/scenes';
 import InspectorSection from './InspectorSection';
-import type { MutableRefObject } from 'react';
 
 interface MaterialSectionProps {
-  sceneId: string;
-  connectionRef: MutableRefObject<HubConnection | null>;
   activeObject: SceneObjectDto;
-  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
-}
-
-async function updateMaterialField(
-  sceneId: string,
-  connectionRef: MutableRefObject<HubConnection | null>,
-  activeObject: SceneObjectDto,
-  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>,
-  field: 'color' | 'opacity',
-  nextValue: string | number,
-) {
-  const nextObject: SceneObjectDto = {
-    ...activeObject,
-    [field]: nextValue,
-  };
-  const updatePayload: UpdateSceneObjectDto = {
-    type: nextObject.type,
-    name: nextObject.name,
-    positionX: nextObject.positionX,
-    positionY: nextObject.positionY,
-    positionZ: nextObject.positionZ,
-    rotationX: nextObject.rotationX,
-    rotationY: nextObject.rotationY,
-    rotationZ: nextObject.rotationZ,
-    scaleX: nextObject.scaleX,
-    scaleY: nextObject.scaleY,
-    scaleZ: nextObject.scaleZ,
-    color: nextObject.color,
-    opacity: nextObject.opacity,
-  };
-
-  setSceneObjects((objects) =>
-    objects.map((object) =>
-      object.id === activeObject.id ? nextObject : object,
-    ),
-  );
-
-  try {
-    await connectionRef.current?.invoke(
-      'UpdateObject',
-      sceneId,
-      activeObject.id,
-      updatePayload,
-    );
-  } catch (error) {
-    console.error('Failed to persist object material', error);
-  }
+  onCommitObject: (nextObject: SceneObjectDto) => void;
 }
 
 function MaterialSection({
-  sceneId,
-  connectionRef,
   activeObject,
-  setSceneObjects,
+  onCommitObject,
 }: MaterialSectionProps) {
   return (
     <InspectorSection title="Material">
@@ -75,14 +22,10 @@ function MaterialSection({
               type="color"
               value={activeObject.color}
               onChange={(event) =>
-                void updateMaterialField(
-                  sceneId,
-                  connectionRef,
-                  activeObject,
-                  setSceneObjects,
-                  'color',
-                  event.target.value,
-                )
+                onCommitObject({
+                  ...activeObject,
+                  color: event.target.value,
+                })
               }
               className="h-7 w-9 rounded border-none bg-transparent p-0"
             />
@@ -108,14 +51,10 @@ function MaterialSection({
             step="0.01"
             value={activeObject.opacity}
             onChange={(event) =>
-              void updateMaterialField(
-                sceneId,
-                connectionRef,
-                activeObject,
-                setSceneObjects,
-                'opacity',
-                Number(event.target.value),
-              )
+              onCommitObject({
+                ...activeObject,
+                opacity: Number(event.target.value),
+              })
             }
             className="w-full accent-[var(--text-primary)]"
           />

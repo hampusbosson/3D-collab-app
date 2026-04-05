@@ -1,21 +1,17 @@
-import type { HubConnection } from "@microsoft/signalr";
-import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type { SceneObjectDto } from "../../../types/scenes";
 import MaterialSection from "./MaterialSection";
 import TransformSection from "./TransformSection";
 
 interface SceneInspectorProps {
-  sceneId: string;
-  connectionRef: MutableRefObject<HubConnection | null>;
   activeObject: SceneObjectDto | null;
-  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
+  onCommitObject: (nextObject: SceneObjectDto) => void;
+  onDeleteObject: (object: SceneObjectDto) => void;
 }
 
 function SceneInspector({
-  sceneId,
-  connectionRef,
   activeObject,
-  setSceneObjects,
+  onCommitObject,
+  onDeleteObject,
 }: SceneInspectorProps) {
 
   if (!activeObject) {
@@ -31,15 +27,6 @@ function SceneInspector({
     );
   }
 
-
-  const deleteObject = async () => {
-    try {
-      await connectionRef.current?.invoke("DeleteObject", sceneId, activeObject.id);
-    } catch (error) {
-      console.error("failed to delete object", error);
-    }
-  };
-
   return (
     <div className="space-y-3 rounded-[18px] border border-(--border-subtle) bg-(--surface-sidebar) p-3 shadow-(--shadow-panel) backdrop-blur-xl">
       <div className="border-b border-(--border-subtle) pb-3">
@@ -53,19 +40,17 @@ function SceneInspector({
 
       <TransformSection
         activeObject={activeObject}
-        setSceneObjects={setSceneObjects}
+        onCommitObject={onCommitObject}
       />
 
       <MaterialSection
-        sceneId={sceneId}
-        connectionRef={connectionRef}
         activeObject={activeObject}
-        setSceneObjects={setSceneObjects}
+        onCommitObject={onCommitObject}
       />
 
       <button
         type="button"
-        onClick={deleteObject}
+        onClick={() => onDeleteObject(activeObject)}
         className="w-full rounded-[18px] border border-[rgba(209,61,79,0.32)] bg-[rgba(209,61,79,0.1)] px-3 py-2.5 text-sm font-medium text-(--danger-solid,#d13d4f) transition hover:cursor-pointer hover:bg-[rgba(209,61,79,0.16)]"
       >
         Delete object

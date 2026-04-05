@@ -24,6 +24,7 @@ export type SceneDto = {
   name: string;
   createdAt: string;
   updatedAt: string;
+  previewObjects: SceneObjectDto[];
 };
 
 export type CreateSceneDto = {

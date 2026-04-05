@@ -1,10 +1,10 @@
 import { Grid, Html, OrbitControls, TransformControls } from "@react-three/drei";
 import { Canvas, type MeshProps, type ThreeEvent, useThree } from "@react-three/fiber";
-import type { HubConnection } from "@microsoft/signalr";
-import { useEffect, useState, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { DoubleSide, Group } from "three";
-import type { LiveSelection, SceneObjectDto, UpdateSceneObjectDto } from "../../types/scenes";
+import type { LiveSelection, SceneObjectDto } from "../../types/scenes";
 import { getUserColor, getUserInitial } from "../../utils/presence";
+import { areSceneObjectsEqual } from "../../utils/sceneObjects";
 
 const transformModes = ["translate", "rotate", "scale"] as const;
 type TransformMode = (typeof transformModes)[number];
@@ -19,24 +19,6 @@ function getRotation(object: SceneObjectDto): [number, number, number] {
 
 function getScale(object: SceneObjectDto): [number, number, number] {
   return [object.scaleX, object.scaleY, object.scaleZ];
-}
-
-function createUpdatePayload(object: SceneObjectDto): UpdateSceneObjectDto {
-  return {
-    type: object.type,
-    name: object.name,
-    positionX: object.positionX,
-    positionY: object.positionY,
-    positionZ: object.positionZ,
-    rotationX: object.rotationX,
-    rotationY: object.rotationY,
-    rotationZ: object.rotationZ,
-    scaleX: object.scaleX,
-    scaleY: object.scaleY,
-    scaleZ: object.scaleZ,
-    color: object.color,
-    opacity: object.opacity,
-  };
 }
 
 function buildObjectFromGroup(group: Group, object: SceneObjectDto): SceneObjectDto {
@@ -230,26 +212,25 @@ function RenderObject({
 }
 
 interface ActiveTransformControlsProps {
-  sceneId: string;
   activeObjectId: string | null;
   activeObject: SceneObjectDto | null;
   mode: TransformMode;
-  connectionRef: MutableRefObject<HubConnection | null>;
   setIsTransformDragging: Dispatch<SetStateAction<boolean>>;
-  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
+  onPreviewObject: (nextObject: SceneObjectDto) => void;
+  onCommitObject: (previousObject: SceneObjectDto, nextObject: SceneObjectDto) => void;
 }
 
 function ActiveTransformControls({
-  sceneId,
   activeObjectId,
   activeObject,
   mode,
-  connectionRef,
   setIsTransformDragging,
-  setSceneObjects,
+  onPreviewObject,
+  onCommitObject,
 }: ActiveTransformControlsProps) {
   const scene = useThree((state) => state.scene);
   const [target, setTarget] = useState<Group | null>(null);
+  const transformStartObjectRef = useRef<SceneObjectDto | null>(null);
 
   useEffect(() => {
     if (!activeObjectId || !activeObject) {
@@ -266,29 +247,18 @@ function ActiveTransformControls({
 
   const syncTransformToState = () => {
     const nextObject = buildObjectFromGroup(target, activeObject);
-
-    setSceneObjects((objects) =>
-      objects.map((entry) => (entry.id === activeObject.id ? nextObject : entry)),
-    );
+    onPreviewObject(nextObject);
   };
 
-  const persistTransform = async () => {
+  const commitTransform = () => {
+    const previousObject = transformStartObjectRef.current;
     const nextObject = buildObjectFromGroup(target, activeObject);
 
-    setSceneObjects((objects) =>
-      objects.map((entry) => (entry.id === activeObject.id ? nextObject : entry)),
-    );
-
-    try {
-      await connectionRef.current?.invoke(
-        "UpdateObject",
-        sceneId,
-        activeObject.id,
-        createUpdatePayload(nextObject),
-      );
-    } catch (error) {
-      console.error("Failed to persist object transform", error);
+    if (!previousObject || areSceneObjectsEqual(previousObject, nextObject)) {
+      return;
     }
+
+    onCommitObject(previousObject, nextObject);
   };
 
   return (
@@ -296,39 +266,38 @@ function ActiveTransformControls({
       object={target}
       mode={mode}
       onMouseDown={() => {
+        transformStartObjectRef.current = activeObject;
         setIsTransformDragging(true);
       }}
       onObjectChange={syncTransformToState}
       onMouseUp={() => {
         setIsTransformDragging(false);
-        void persistTransform();
+        commitTransform();
       }}
     />
   );
 }
 
 interface SceneCanvasProps {
-  sceneId: string;
   isDark: boolean;
-  connectionRef: MutableRefObject<HubConnection | null>;
   sceneObjects: SceneObjectDto[];
   currentUserName: string;
   liveSelections: LiveSelection[];
   activeObjectId: string | null;
   setActiveObjectId: Dispatch<SetStateAction<string | null>>;
-  setSceneObjects: Dispatch<SetStateAction<SceneObjectDto[]>>;
+  onPreviewObject: (nextObject: SceneObjectDto) => void;
+  onCommitObject: (previousObject: SceneObjectDto, nextObject: SceneObjectDto) => void;
 }
 
 export function SceneCanvas({
-  sceneId,
   isDark,
-  connectionRef,
   sceneObjects,
   currentUserName,
   liveSelections,
   activeObjectId,
   setActiveObjectId,
-  setSceneObjects,
+  onPreviewObject,
+  onCommitObject,
 }: SceneCanvasProps) {
   const [transformModeIndex, setTransformModeIndex] = useState(0);
   const [isTransformDragging, setIsTransformDragging] = useState(false);
@@ -409,13 +378,12 @@ export function SceneCanvas({
         />
       ))}
       <ActiveTransformControls
-        sceneId={sceneId}
         activeObjectId={activeObjectId}
         activeObject={activeObject}
         mode={transformMode}
-        connectionRef={connectionRef}
         setIsTransformDragging={setIsTransformDragging}
-        setSceneObjects={setSceneObjects}
+        onPreviewObject={onPreviewObject}
+        onCommitObject={onCommitObject}
       />
       <OrbitControls makeDefault />
     </Canvas>

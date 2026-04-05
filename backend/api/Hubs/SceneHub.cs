@@ -177,6 +177,64 @@ public class SceneHub : Hub
         await Clients.Group(sceneId).SendAsync("ObjectAdded", response);
     }
 
+    public async Task UpsertObject(string sceneId, SceneObjectDto dto)
+    {
+        if (!Guid.TryParse(sceneId, out var sceneGuid) || dto.Id == Guid.Empty)
+        {
+            return;
+        }
+
+        var scene = await _db.Scenes.FirstOrDefaultAsync(s => s.Id == sceneGuid);
+        if (scene == null)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        var sceneObject = await _db.SceneObjects
+            .FirstOrDefaultAsync(o => o.Id == dto.Id && o.SceneId == sceneGuid);
+
+        var wasCreated = sceneObject == null;
+
+        if (sceneObject == null)
+        {
+            sceneObject = new SceneObject
+            {
+                Id = dto.Id,
+                SceneId = sceneGuid,
+                CreatedBy = string.IsNullOrWhiteSpace(dto.CreatedBy) ? "system" : dto.CreatedBy
+            };
+
+            _db.SceneObjects.Add(sceneObject);
+        }
+
+        sceneObject.Type = dto.Type;
+        sceneObject.Name = string.IsNullOrWhiteSpace(dto.Name) ? dto.Type : dto.Name;
+
+        sceneObject.PositionX = dto.PositionX;
+        sceneObject.PositionY = dto.PositionY;
+        sceneObject.PositionZ = dto.PositionZ;
+
+        sceneObject.RotationX = dto.RotationX;
+        sceneObject.RotationY = dto.RotationY;
+        sceneObject.RotationZ = dto.RotationZ;
+
+        sceneObject.ScaleX = dto.ScaleX;
+        sceneObject.ScaleY = dto.ScaleY;
+        sceneObject.ScaleZ = dto.ScaleZ;
+
+        sceneObject.Color = string.IsNullOrWhiteSpace(dto.Color) ? "#ffffff" : dto.Color;
+        sceneObject.Opacity = dto.Opacity;
+        sceneObject.UpdatedAt = now;
+
+        scene.UpdatedAt = now;
+        await _db.SaveChangesAsync();
+
+        var response = SceneObjectToDto(sceneObject);
+
+        await Clients.Group(sceneId).SendAsync(wasCreated ? "ObjectAdded" : "ObjectUpdated", response);
+    }
+
     public async Task DeleteObject(string sceneId, string objectId)
     {
         if (!Guid.TryParse(sceneId, out var sceneGuid) ||

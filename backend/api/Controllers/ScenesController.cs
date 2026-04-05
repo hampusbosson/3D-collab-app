@@ -45,6 +45,7 @@ public class ScenesController : ControllerBase
     {
         var scenes = await _db.Scenes
             .AsNoTracking()
+            .Include(s => s.Objects)
             .OrderByDescending(s => s.UpdatedAt)
             .Select(s => SceneToDto(s))
             .ToListAsync();
@@ -120,7 +121,12 @@ public class ScenesController : ControllerBase
         Id = scene.Id,
         Name = scene.Name,
         CreatedAt = scene.CreatedAt,
-        UpdatedAt = scene.UpdatedAt
+        UpdatedAt = scene.UpdatedAt,
+        PreviewObjects = scene.Objects
+            .OrderByDescending(obj => obj.UpdatedAt)
+            .Take(6)
+            .Select(SceneObjectToDto)
+            .ToList()
     };
 
     private static SceneObjectDto SceneObjectToDto(SceneObject obj) => new SceneObjectDto
