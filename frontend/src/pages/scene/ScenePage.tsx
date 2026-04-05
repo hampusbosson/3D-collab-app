@@ -10,10 +10,9 @@ import SceneSidebar from "./SceneSidebar";
 import { getSceneById, updateScene } from "../../api/scenes";
 import { SceneDetailsDto, SceneObjectDto } from "../../types/scenes";
 import * as signalR from "@microsoft/signalr";
+import { signalRHubUrl } from "../../utils/env";
 
 const sceneOnboardingPreferenceKey = "scene-onboarding-hidden";
-const signalRHubUrl =
-  import.meta.env.VITE_SIGNALR_HUB_URL ?? "https://localhost:7188/hubs/scene";
 
 function ScenePage() {
   const { sceneId } = useParams();
@@ -37,7 +36,6 @@ function ScenePage() {
       const scene = await getSceneById(sceneId);
       setScene(scene);
       setSceneObjects(scene.objects);
-      console.log(scene.objects);
     } catch (error) {
       console.error("Failed to fetch scene", error);
     }
@@ -119,7 +117,7 @@ function ScenePage() {
       }
     };
 
-    startConnection(); 
+    void startConnection();
 
     return () => {
       isMounted = false;

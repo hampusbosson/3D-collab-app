@@ -260,10 +260,7 @@ function SceneSidebar({
               <button
                 key={element.id}
                 type="button"
-                onClick={() => {
-                  setActiveObjectId(element.id);
-                  console.log(activeObjectId)
-                }}
+                onClick={() => setActiveObjectId(element.id)}
                 className={`flex w-full items-center gap-1.5 rounded-[8px] px-1.5 py-1.5 text-left transition hover:cursor-pointer ${
                   isActive
                     ? 'bg-[rgba(251,146,60,0.14)] text-[color:var(--text-primary)]'

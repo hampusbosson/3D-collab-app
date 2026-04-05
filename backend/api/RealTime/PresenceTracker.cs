@@ -2,50 +2,66 @@ namespace api.RealTime;
 
 public class PresenceTracker
 {
-
     // maps: sceneId -> (ConnectionId -> userName)
     private readonly Dictionary<string, Dictionary<string, string>> _sceneUsers = new();
+    private readonly Lock _lock = new();
 
     public void AddUser(string sceneId, string connectionId, string userName)
     {
-        if (!_sceneUsers.ContainsKey(sceneId))
+        lock (_lock)
         {
-            _sceneUsers[sceneId] = new Dictionary<string, string>();
-        }
+            if (!_sceneUsers.ContainsKey(sceneId))
+            {
+                _sceneUsers[sceneId] = new Dictionary<string, string>();
+            }
 
-        _sceneUsers[sceneId][connectionId] = userName;
+            _sceneUsers[sceneId][connectionId] = userName;
+        }
     }
 
     public List<string> GetUsers(string sceneId)
     {
-        if (!_sceneUsers.TryGetValue(sceneId, out var users))
+        lock (_lock)
         {
-            return new List<string>();
-        }
+            if (!_sceneUsers.TryGetValue(sceneId, out var users))
+            {
+                return new List<string>();
+            }
 
-        return users.Values.Distinct().OrderBy(name => name).ToList();
+            return users.Values.Distinct().OrderBy(name => name).ToList();
+        }
     }
 
     public (string sceneId, string userName)? RemoveConnection(string connectionId)
     {
-        foreach (var sceneEntry in _sceneUsers)
+        lock (_lock)
         {
-            var sceneId = sceneEntry.Key;
-            var users = sceneEntry.Value;
+            string? emptySceneId = null;
 
-            if (users.TryGetValue(connectionId, out var userName))
+            foreach (var sceneEntry in _sceneUsers)
             {
-                users.Remove(connectionId);
+                var sceneId = sceneEntry.Key;
+                var users = sceneEntry.Value;
 
-                if (users.Count == 0)
+                if (users.TryGetValue(connectionId, out var userName))
                 {
-                    _sceneUsers.Remove(sceneId);
+                    users.Remove(connectionId);
+
+                    if (users.Count == 0)
+                    {
+                        emptySceneId = sceneId;
+                    }
+
+                    if (emptySceneId != null)
+                    {
+                        _sceneUsers.Remove(emptySceneId);
+                    }
+
+                    return (sceneId, userName);
                 }
-
-                return (sceneId, userName);
             }
-        }
 
-        return null;
+            return null;
+        }
     }
 }

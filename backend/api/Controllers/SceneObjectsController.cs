@@ -20,23 +20,26 @@ public class SceneObjectsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<SceneObjectDto>> CreateSceneObject(Guid sceneId, CreateSceneObjectDto dto)
     {
-        var sceneExists = await _db.Scenes.AnyAsync(s => s.Id == sceneId);
+        var scene = await _db.Scenes.FirstOrDefaultAsync(s => s.Id == sceneId);
 
-        if (!sceneExists)
+        if (scene == null)
         {
             return NotFound();
         }
+
+        var now = DateTime.UtcNow;
 
         var sceneObject = new SceneObject
         {
             Id = Guid.NewGuid(),
             SceneId = sceneId,
             CreatedBy = "system",
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = now
         };
 
         ApplyUpdateDto(sceneObject, dto);
 
+        scene.UpdatedAt = now;
         _db.SceneObjects.Add(sceneObject);
         await _db.SaveChangesAsync();
 
@@ -57,8 +60,17 @@ public class SceneObjectsController : ControllerBase
             return NotFound();
         }
 
+        var scene = await _db.Scenes.FirstOrDefaultAsync(s => s.Id == sceneId);
+        if (scene == null)
+        {
+            return NotFound();
+        }
+
+        var now = DateTime.UtcNow;
+
         ApplyUpdateDto(sceneObject, dto);
-        sceneObject.UpdatedAt = DateTime.UtcNow;
+        sceneObject.UpdatedAt = now;
+        scene.UpdatedAt = now;
 
         await _db.SaveChangesAsync();
 
@@ -76,6 +88,13 @@ public class SceneObjectsController : ControllerBase
             return NotFound();
         }
 
+        var scene = await _db.Scenes.FirstOrDefaultAsync(s => s.Id == sceneId);
+        if (scene == null)
+        {
+            return NotFound();
+        }
+
+        scene.UpdatedAt = DateTime.UtcNow;
         _db.SceneObjects.Remove(sceneObject);
         await _db.SaveChangesAsync();
 

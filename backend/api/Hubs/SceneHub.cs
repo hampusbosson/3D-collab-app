@@ -71,6 +71,14 @@ public class SceneHub : Hub
             return;
         }
 
+        var scene = await _db.Scenes.FirstOrDefaultAsync(s => s.Id == sceneGuid);
+        if (scene == null)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+
         sceneObject.Type = dto.Type;
         sceneObject.Name = string.IsNullOrWhiteSpace(dto.Name) ? dto.Type : dto.Name;
 
@@ -88,7 +96,8 @@ public class SceneHub : Hub
 
         sceneObject.Color = string.IsNullOrWhiteSpace(dto.Color) ? "#ffffff" : dto.Color;
         sceneObject.Opacity = dto.Opacity;
-        sceneObject.UpdatedAt = DateTime.UtcNow;
+        sceneObject.UpdatedAt = now;
+        scene.UpdatedAt = now;
 
         await _db.SaveChangesAsync();
 
@@ -104,11 +113,13 @@ public class SceneHub : Hub
             return;
         }
 
-        var sceneExists = await _db.Scenes.AnyAsync(s => s.Id == sceneGuid);
-        if (!sceneExists)
+        var scene = await _db.Scenes.FirstOrDefaultAsync(s => s.Id == sceneGuid);
+        if (scene == null)
         {
             return;
         }
+
+        var now = DateTime.UtcNow;
 
         var sceneObject = new SceneObject
         {
@@ -132,9 +143,10 @@ public class SceneHub : Hub
             Color = string.IsNullOrWhiteSpace(dto.Color) ? "#ffffff" : dto.Color,
             Opacity = dto.Opacity,
             CreatedBy = "system",
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = now
         };
 
+        scene.UpdatedAt = now;
         _db.SceneObjects.Add(sceneObject);
         await _db.SaveChangesAsync();
 
@@ -159,16 +171,19 @@ public class SceneHub : Hub
             return;
         }
 
+        var scene = await _db.Scenes.FirstOrDefaultAsync(s => s.Id == sceneGuid);
+        if (scene == null)
+        {
+            return;
+        }
+
+        scene.UpdatedAt = DateTime.UtcNow;
         _db.SceneObjects.Remove(sceneObject);
         await _db.SaveChangesAsync();
 
         await Clients.Group(sceneId).SendAsync("ObjectDeleted", objectId);
     }
 
-
-    /**
-    ** REFACTOR THIS AND THE OTHER MAPPERS IN SCENESCONTROLLER TO BE UNDER THEIR OWN FOLDER/FILE
-    */
     private static SceneObjectDto SceneObjectToDto(SceneObject obj) => new SceneObjectDto
     {
         Id = obj.Id,
