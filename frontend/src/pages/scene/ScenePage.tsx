@@ -72,6 +72,7 @@ function ScenePage() {
   const [historyFuture, setHistoryFuture] = useState<HistoryEntry[]>([]);
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const activeObjectIdRef = useRef<string | null>(null);
+  const skipNextSelectionBroadcastRef = useRef<string | null>(null);
 
   useEffect(() => {
     activeObjectIdRef.current = activeObjectId;
@@ -197,6 +198,14 @@ function ScenePage() {
       return;
     }
 
+    if (
+      activeObjectId !== null &&
+      skipNextSelectionBroadcastRef.current === activeObjectId
+    ) {
+      skipNextSelectionBroadcastRef.current = null;
+      return;
+    }
+
     const connection = connectionRef.current;
     if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
       return;
@@ -294,6 +303,7 @@ function ScenePage() {
       selectionAfterUndo: null,
       selectionAfterRedo: newObject.id,
     });
+    skipNextSelectionBroadcastRef.current = newObject.id;
     setActiveObjectId(newObject.id);
     await persistMutation({ type: "upsert", object: newObject });
   };

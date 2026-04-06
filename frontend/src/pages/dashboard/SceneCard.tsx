@@ -63,7 +63,7 @@ function SceneCard({ scene, onDeleteClick }: SceneCardProps) {
               </div>
             ))}
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-muted)] text-[color:var(--text-secondary)] transition group-hover:border-[color:var(--border-strong)] group-hover:bg-[var(--surface-strong)] group-hover:text-[color:var(--text-inverse)]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-muted)] text-[color:var(--text-secondary)] transition group-hover:border-[color:var(--accent-primary)] group-hover:bg-[color:var(--accent-primary)] group-hover:text-[color:var(--accent-contrast)]">
             <ArrowIcon />
           </div>
         </div>
