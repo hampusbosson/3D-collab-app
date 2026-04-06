@@ -49,6 +49,7 @@ function ScenePage() {
   const [sceneObjects, setSceneObjects] = useState<SceneObjectDto[]>([]);
   const isDark = theme === "dark";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<"scene" | "inspector" | null>(null);
   const [dontShowOnboardingAgain, setDontShowOnboardingAgain] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
@@ -457,8 +458,51 @@ function ScenePage() {
           />
         </div>
 
+        <div className="absolute left-3 right-3 top-3 z-10 flex items-center gap-2 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobilePanel((currentPanel) => currentPanel === "scene" ? null : "scene")}
+            className="pointer-events-auto inline-flex min-w-0 flex-1 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] px-3 py-2 text-[0.72rem] font-medium text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] backdrop-blur-xl"
+          >
+            Scene
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobilePanel((currentPanel) => currentPanel === "inspector" ? null : "inspector")}
+            className="pointer-events-auto inline-flex min-w-0 flex-1 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] px-3 py-2 text-[0.72rem] font-medium text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] backdrop-blur-xl"
+          >
+            Inspector
+          </button>
+          <button
+            type="button"
+            aria-label="Undo last change"
+            onClick={() => void handleUndo()}
+            disabled={historyPast.length === 0}
+            className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] text-[0.72rem] font-medium text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] backdrop-blur-xl disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            U
+          </button>
+          <button
+            type="button"
+            aria-label="Redo last undone change"
+            onClick={() => void handleRedo()}
+            disabled={historyFuture.length === 0}
+            className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] text-[0.72rem] font-medium text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] backdrop-blur-xl disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            R
+          </button>
+          <button
+            type="button"
+            aria-label="Open scene help"
+            onClick={() => setIsOnboardingOpen(true)}
+            className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)] backdrop-blur-xl"
+          >
+            <HelpCircleIcon />
+          </button>
+        </div>
+
         <aside
-          className={`absolute left-4 right-4 top-4 z-10 lg:bottom-4 lg:left-4 lg:right-auto lg:top-4 ${
+          className={`absolute left-4 right-4 top-4 z-10 hidden lg:bottom-4 lg:left-4 lg:right-auto lg:top-4 lg:block ${
             sidebarCollapsed ? "lg:w-11" : "lg:w-54"
           }`}
         >
@@ -476,7 +520,7 @@ function ScenePage() {
           />
         </aside>
 
-        <aside className="absolute bottom-4 left-4 right-4 z-10 lg:bottom-4 lg:left-auto lg:right-4 lg:top-4 lg:w-[264px]">
+        <aside className="absolute bottom-4 left-4 right-4 z-10 hidden lg:bottom-4 lg:left-auto lg:right-4 lg:top-4 lg:block lg:w-[264px]">
           <SceneInspector
             activeObject={activeObject}
             onCommitObject={handleCommitObject}
@@ -484,7 +528,7 @@ function ScenePage() {
           />
         </aside>
 
-        <div className="absolute right-4 top-4 z-10 flex items-center gap-2 lg:right-72">
+        <div className="absolute right-4 top-4 z-10 hidden items-center gap-2 lg:right-72 lg:flex">
           <button
             type="button"
             aria-label="Undo last change"
@@ -515,9 +559,50 @@ function ScenePage() {
           </button>
         </div>
 
-        <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
+        <div className="pointer-events-none absolute bottom-3 left-3 right-3 z-10 lg:bottom-4 lg:left-1/2 lg:right-auto lg:-translate-x-1/2">
           <AddObjectBar onAddObject={(type) => void handleAddObject(type)} />
         </div>
+
+        {mobilePanel ? (
+          <div className="absolute inset-x-3 bottom-[4.75rem] z-20 lg:hidden">
+            <div className="rounded-[22px] border border-[color:var(--border-subtle)] bg-[rgba(15,23,42,0.72)] p-1 shadow-[var(--shadow-panel)] backdrop-blur-xl">
+              <div className="mb-1 flex items-center justify-between px-3 pt-2">
+                <p className="text-[0.68rem] font-medium uppercase tracking-[0.14em] text-[color:var(--text-muted)]">
+                  {mobilePanel === "scene" ? "Scene panel" : "Inspector"}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setMobilePanel(null)}
+                  className="rounded-full px-2 py-1 text-[0.7rem] font-medium text-[color:var(--text-secondary)]"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="max-h-[52vh] overflow-y-auto">
+                {mobilePanel === "scene" ? (
+                  <SceneSidebar
+                    scene={scene}
+                    users={connectedUsers}
+                    elements={sceneObjects}
+                    collapsed={false}
+                    onToggleCollapse={() => setMobilePanel(null)}
+                    onSceneNameCommit={handleSceneNameCommit}
+                    activeObjectId={activeObjectId}
+                    currentUserName={currentUserName}
+                    liveSelections={liveSelections}
+                    setActiveObjectId={setActiveObjectId}
+                  />
+                ) : (
+                  <SceneInspector
+                    activeObject={activeObject}
+                    onCommitObject={handleCommitObject}
+                    onDeleteObject={handleDeleteObject}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <SceneOnboardingModal

@@ -142,14 +142,15 @@ function PreviewScene({ objects }: { objects: SceneObjectDto[] }) {
 
 function PreviewThumbnail({ objects }: PreviewThumbnailProps) {
   return (
-    <div className="relative h-52 overflow-hidden rounded-[28px] border border-[color:var(--border-subtle)] bg-[linear-gradient(180deg,#eef4fa_0%,#d9e5f0_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_24px_60px_rgba(148,163,184,0.24)]">
+    <div className="relative h-40 w-full min-w-0 overflow-hidden rounded-[20px] border border-[color:var(--border-subtle)] bg-[linear-gradient(180deg,#eef4fa_0%,#d9e5f0_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_24px_60px_rgba(148,163,184,0.24)] sm:h-52 sm:rounded-[28px]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.65),transparent_52%)]" />
       <Canvas
+        key={`${objects.length}-${objects.map((object) => object.id).join(':')}`}
         shadows
         dpr={[1, 1.5]}
         frameloop="demand"
         camera={{ position: [5.6, 4.8, 7.4], fov: 34 }}
-        className="h-full w-full"
+        className="!block h-full w-full"
       >
         <PreviewScene objects={objects} />
       </Canvas>

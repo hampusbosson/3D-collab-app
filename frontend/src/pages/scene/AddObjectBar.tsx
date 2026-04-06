@@ -26,7 +26,8 @@ function AddObjectBar({ onAddObject }: AddObjectBarProps) {
   };
 
   return (
-    <div className="pointer-events-auto inline-flex items-center gap-1 rounded-[20px] border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] px-3 py-1.5 shadow-[var(--shadow-panel)] backdrop-blur-xl">
+    <div className="pointer-events-auto flex w-full items-center justify-center rounded-[20px] border border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] px-2 py-1.5 shadow-[var(--shadow-panel)] backdrop-blur-xl lg:inline-flex lg:w-auto lg:px-3">
+      <div className="flex flex-wrap items-center justify-center gap-1">
       {primitiveButtons.map((primitive) => (
         <button
           key={primitive.id}
@@ -38,6 +39,7 @@ function AddObjectBar({ onAddObject }: AddObjectBarProps) {
           {primitiveIcons[primitive.id]}
         </button>
       ))}
+      </div>
     </div>
   );
 }

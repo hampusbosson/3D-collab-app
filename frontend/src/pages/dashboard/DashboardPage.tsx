@@ -82,7 +82,7 @@ function DashboardPage() {
   return (
     <div className="min-h-screen bg-[var(--bg-app)] text-[color:var(--text-primary)]">
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <aside className="w-full border-b border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] px-6 py-6 backdrop-blur-xl lg:w-[280px] lg:border-b-0 lg:border-r lg:px-8 lg:py-8">
+        <aside className="w-full border-b border-[color:var(--border-subtle)] bg-[var(--surface-sidebar)] px-4 py-5 backdrop-blur-xl sm:px-6 sm:py-6 lg:w-[280px] lg:border-b-0 lg:border-r lg:px-8 lg:py-8">
           <div className="flex h-full flex-col justify-between gap-10">
             <div className="space-y-10">
               <div className="flex items-center gap-4">
@@ -106,9 +106,9 @@ function DashboardPage() {
           </div>
         </aside>
 
-        <main className="flex-1 px-6 py-6 lg:px-10 lg:py-8">
+        <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
           <div className="flex max-w-[1440px] flex-col gap-6">
-            <header className="flex flex-col gap-4 rounded-[32px] border border-[color:var(--border-subtle)] bg-[var(--surface-panel)] p-5 shadow-[var(--shadow-card)] backdrop-blur-xl lg:flex-row lg:items-center lg:justify-between lg:p-6">
+            <header className="flex flex-col gap-4 rounded-[26px] border border-[color:var(--border-subtle)] bg-[var(--surface-panel)] p-4 shadow-[var(--shadow-card)] backdrop-blur-xl sm:rounded-[32px] sm:p-5 lg:flex-row lg:items-center lg:justify-between lg:p-6">
               <label className="flex w-full max-w-xl items-center gap-3 rounded-2xl border border-[color:var(--border-subtle)] bg-[var(--surface-muted)] px-4 py-3">
                 <SearchIcon />
                 <input
@@ -120,7 +120,7 @@ function DashboardPage() {
                 />
               </label>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => handleCreateScene("untitled")}
@@ -133,13 +133,13 @@ function DashboardPage() {
               </div>
             </header>
 
-            <section className="rounded-[36px] border border-[color:var(--border-subtle)] bg-[var(--surface-panel)] p-5 shadow-[var(--shadow-panel)] backdrop-blur-xl lg:p-8">
+            <section className="rounded-[28px] border border-[color:var(--border-subtle)] bg-[var(--surface-panel)] p-4 shadow-[var(--shadow-panel)] backdrop-blur-xl sm:rounded-[36px] sm:p-5 lg:p-8">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-[color:var(--text-muted)]">
                     Workspace
                   </p>
-                  <h2 className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-[color:var(--text-primary)]">
+                  <h2 className="mt-2 text-[2rem] font-semibold tracking-[-0.05em] text-[color:var(--text-primary)] sm:text-4xl">
                     Scene dashboard
                   </h2>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-[color:var(--text-secondary)]">
@@ -154,7 +154,7 @@ function DashboardPage() {
                 </div>
               </div>
 
-              <div className="mt-8 grid gap-6 xl:grid-cols-2 2xl:grid-cols-3">
+              <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4 sm:mt-8 sm:gap-6 xl:grid-cols-2 2xl:grid-cols-3">
                 {scenes.length === 0 ? (
                   <div className="rounded-[28px] border border-dashed border-[color:var(--border-strong)] bg-[var(--surface-elevated)] px-6 py-12 text-center shadow-[var(--shadow-soft)] xl:col-span-2 2xl:col-span-3">
                     <p className="text-base font-semibold text-[color:var(--text-primary)]">
